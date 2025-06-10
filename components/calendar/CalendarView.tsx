@@ -12,7 +12,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 export default function CalendarView() {
-  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, convertTaskToTimeBlock, checkTimeConflict } = useStore();
+  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, deleteTask, convertTaskToTimeBlock, checkTimeConflict } = useStore();
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [selectedTimeBlockId, setSelectedTimeBlockId] = useState<string | null>(null);
@@ -176,55 +176,68 @@ export default function CalendarView() {
     setSelectedTimeBlockId(null);
   };
 
-  // Function to handle dropping a task onto the calendar with conflict checking
-  const handleEventReceive = (receiveInfo: any) => {
-    const { event } = receiveInfo;
-    const taskData = event.extendedProps.taskData;
-    
-    if (taskData) {
-      // Check for conflicts before converting
-      const duration = taskData.estimatedDuration || 30;
-      const endTime = addMinutes(event.start, duration);
-      
-      if (checkTimeConflict(event.start, endTime)) {
-        showConflictMessage('Cannot drop task: Time slot is already occupied');
-        event.remove(); // Remove the temporary event
-        return;
-      }
-      
-      // Convert the task to a time block
-      const success = convertTaskToTimeBlock(taskData.id, event.start);
-      if (!success) {
-        showConflictMessage('Cannot convert task: Time conflict detected');
-      }
-      
-      // Remove the temporary event that was created by the drag
-      event.remove();
-    }
-  };
-
-  // Function to handle external drag (from task panel) with conflict checking
+  // Enhanced function to handle external drag (from task panel)
   const handleDrop = (dropInfo: any) => {
     try {
       const taskData = JSON.parse(dropInfo.draggedEl.dataset.task || '{}');
-      if (taskData.id) {
-        // Check for conflicts before converting
+      if (!taskData.id) return;
+
+      // Check if the task was dropped on an existing time block
+      const droppedOnTimeBlock = findTimeBlockAtPosition(dropInfo.jsEvent.clientX, dropInfo.jsEvent.clientY);
+      
+      if (droppedOnTimeBlock) {
+        // Task dropped on existing time block - assign task to that time block
+        const success = updateTimeBlock(droppedOnTimeBlock.id, { 
+          title: taskData.title 
+        });
+        
+        if (success) {
+          deleteTask(taskData.id);
+          showConflictMessage(`✅ Task "${taskData.title}" assigned to existing time block`);
+        } else {
+          showConflictMessage('❌ Failed to assign task to time block');
+        }
+      } else {
+        // Task dropped on empty slot - create new time block
         const duration = taskData.estimatedDuration || 30;
         const endTime = addMinutes(dropInfo.date, duration);
         
         if (checkTimeConflict(dropInfo.date, endTime)) {
-          showConflictMessage('Cannot drop task: Time slot is already occupied');
+          showConflictMessage('❌ Cannot drop task: Time slot is already occupied');
           return;
         }
         
         const success = convertTaskToTimeBlock(taskData.id, dropInfo.date);
-        if (!success) {
-          showConflictMessage('Cannot convert task: Time conflict detected');
+        if (success) {
+          showConflictMessage(`✅ Task "${taskData.title}" converted to new time block`);
+        } else {
+          showConflictMessage('❌ Cannot convert task: Time conflict detected');
         }
       }
     } catch (error) {
       console.error('Error parsing task data:', error);
+      showConflictMessage('❌ Error processing dropped task');
     }
+  };
+
+  // Helper function to find time block at specific screen coordinates
+  const findTimeBlockAtPosition = (clientX: number, clientY: number) => {
+    const elements = document.elementsFromPoint(clientX, clientY);
+    
+    for (const element of elements) {
+      // Look for FullCalendar event elements
+      if (element.classList.contains('fc-event') || element.closest('.fc-event')) {
+        const eventElement = element.classList.contains('fc-event') ? element : element.closest('.fc-event');
+        const eventId = eventElement?.getAttribute('data-event-id') || 
+                       eventElement?.querySelector('[data-event-id]')?.getAttribute('data-event-id');
+        
+        if (eventId) {
+          return timeBlocks.find(block => block.id === eventId);
+        }
+      }
+    }
+    
+    return null;
   };
 
   // Function to save inline edit
@@ -284,7 +297,6 @@ export default function CalendarView() {
           dateClick={handleDateClick} // Handle clicks on calendar dates/times
           eventClick={handleEventClick}
           eventChange={handleEventChange}
-          eventReceive={handleEventReceive}
           drop={handleDrop}
           events={timeBlocks}
           eventContent={(info) => {
@@ -316,7 +328,7 @@ export default function CalendarView() {
             }
             
             return (
-              <Tooltip content={`${info.event.title} (Double-click to edit, Right-click for options)`}>
+              <Tooltip content={`${info.event.title} (Double-click to edit, Right-click for options, Drag tasks here to assign)`}>
                 <div 
                   className={cn(
                     "h-full w-full p-1 overflow-hidden cursor-pointer",
@@ -376,12 +388,9 @@ export default function CalendarView() {
         </div>
       )}
 
-      {/* Conflict Message */}
+      {/* Feedback Message */}
       {conflictMessage && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-md shadow-lg z-50 flex items-center gap-2 max-w-md text-center">
           {conflictMessage}
         </div>
       )}
@@ -392,7 +401,7 @@ export default function CalendarView() {
         <div>Double-click time block: Edit</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
-        <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
+        <div className="text-green-300 mt-1">✨ Drag tasks to time blocks or empty slots</div>
       </div>
     </div>
   );
