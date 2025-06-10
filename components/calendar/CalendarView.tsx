@@ -21,6 +21,7 @@ export default function CalendarView() {
   const [lastClickTime, setLastClickTime] = useState<number>(0);
   const [lastClickInfo, setLastClickInfo] = useState<any>(null);
   const calendarRef = useRef<FullCalendar>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Handle keyboard events for deletion
   useEffect(() => {
@@ -33,11 +34,18 @@ export default function CalendarView() {
       if (e.key === 'Escape') {
         setSelectedTimeBlockId(null);
         setContextMenu(null);
+        if (inlineEditingId) {
+          handleCancelInlineEdit();
+        }
       }
     };
 
     const handleClickOutside = (e: MouseEvent) => {
       setContextMenu(null);
+      // If clicking outside while editing, save the edit
+      if (inlineEditingId && editInputRef.current && !editInputRef.current.contains(e.target as Node)) {
+        handleSaveInlineEdit(inlineEditingId);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -139,6 +147,11 @@ export default function CalendarView() {
     if (clickInfo.jsEvent.detail === 2) {
       setInlineEditingId(event.id);
       setEditValue(timeBlock.title);
+      // Focus the textarea after a short delay
+      setTimeout(() => {
+        editInputRef.current?.focus();
+        editInputRef.current?.select();
+      }, 50);
     }
   };
 
@@ -221,12 +234,16 @@ export default function CalendarView() {
     }
     setInlineEditingId(null);
     setEditValue('');
+    // Explicitly blur the textarea
+    editInputRef.current?.blur();
   };
 
   // Function to cancel inline edit
   const handleCancelInlineEdit = () => {
     setInlineEditingId(null);
     setEditValue('');
+    // Explicitly blur the textarea
+    editInputRef.current?.blur();
   };
 
   return (
@@ -279,6 +296,7 @@ export default function CalendarView() {
                 <div className="h-full w-full p-1 flex flex-col overflow-hidden">
                   <div className="text-xs font-medium mb-1 text-gray-800 dark:text-gray-200">{info.timeText}</div>
                   <textarea
+                    ref={editInputRef}
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -290,10 +308,7 @@ export default function CalendarView() {
                         handleCancelInlineEdit();
                       }
                     }}
-                    onBlur={() => handleSaveInlineEdit(info.event.id)}
                     className="flex-1 w-full text-xs bg-transparent resize-none text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-inset rounded-sm p-1"
-                    autoFocus
-                    onFocus={(e) => e.target.select()}
                     style={{ minHeight: '0' }}
                   />
                 </div>
@@ -315,8 +330,8 @@ export default function CalendarView() {
                     });
                   }}
                 >
-                  <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{info.timeText}</div>
-                  <div className="text-xs truncate text-gray-800 dark:text-gray-200" title={info.event.title}>
+                  <div className="text-xs font-medium text-gray-800 dark:text-gray-200 mb-1">{info.timeText}</div>
+                  <div className="text-xs text-gray-800 dark:text-gray-200 whitespace-normal break-words overflow-hidden" title={info.event.title}>
                     {info.event.title}
                   </div>
                 </div>
