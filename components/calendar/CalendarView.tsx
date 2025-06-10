@@ -18,6 +18,8 @@ export default function CalendarView() {
   const [selectedTimeBlockId, setSelectedTimeBlockId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; timeBlockId: string } | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
+  const [lastClickInfo, setLastClickInfo] = useState<any>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   // Handle keyboard events for deletion
@@ -62,27 +64,39 @@ export default function CalendarView() {
     setConflictMessage(message);
   };
 
-  // Function to handle time block creation with conflict checking
-  const handleDateSelect = (selectInfo: any) => {
-    const { start, end } = selectInfo;
+  // Function to handle calendar area clicks (for double-click detection)
+  const handleDateClick = (clickInfo: any) => {
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastClickTime;
+    
+    // Check if this is a double click (within 300ms and same position)
+    if (timeDiff < 300 && lastClickInfo && 
+        Math.abs(lastClickInfo.jsEvent.clientX - clickInfo.jsEvent.clientX) < 10 &&
+        Math.abs(lastClickInfo.jsEvent.clientY - clickInfo.jsEvent.clientY) < 10) {
+      
+      // This is a double click - create time block
+      handleDoubleClickTimeSlot(clickInfo);
+    }
+    
+    // Update last click info
+    setLastClickTime(currentTime);
+    setLastClickInfo(clickInfo);
+  };
+
+  // Function to handle double-click on empty time slot
+  const handleDoubleClickTimeSlot = (clickInfo: any) => {
+    const { date } = clickInfo;
+    const endTime = addMinutes(date, 30); // Default 30-minute duration
     
     // Check for conflicts before creating
-    if (checkTimeConflict(start, end)) {
+    if (checkTimeConflict(date, endTime)) {
       showConflictMessage('Cannot create time block: Time slot is already occupied');
-      if (calendarRef.current) {
-        calendarRef.current.getApi().unselect();
-      }
       return;
     }
     
-    const newBlock = addTimeBlock(start, end, 'New Time Block');
+    const newBlock = addTimeBlock(date, endTime, 'New Time Block');
     if (!newBlock) {
       showConflictMessage('Cannot create time block: Time conflict detected');
-    }
-    
-    // Clear the selection
-    if (calendarRef.current) {
-      calendarRef.current.getApi().unselect();
     }
   };
 
@@ -108,7 +122,7 @@ export default function CalendarView() {
     }
   };
 
-  // Function to handle double-clicking on a time block to edit it inline
+  // Function to handle clicking on a time block
   const handleEventClick = (clickInfo: any) => {
     const { event } = clickInfo;
     const timeBlock = timeBlocks.find(block => block.id === event.id);
@@ -236,21 +250,21 @@ export default function CalendarView() {
           height="100%"
           allDaySlot={false}
           editable={true}
-          selectable={true}
-          selectMirror={true}
+          selectable={false} // Disable selection to prevent single-click time block creation
+          selectMirror={false}
           dayMaxEvents={true}
           droppable={true}
           slotMinTime="06:00:00"
           slotMaxTime="22:00:00"
           slotDuration="00:15:00"
           snapDuration="00:05:00"
-          selectOverlap={false} // Prevent selection over existing events
-          eventOverlap={false} // Prevent event overlap
+          selectOverlap={false}
+          eventOverlap={false}
           selectConstraint={{
             start: '06:00',
             end: '22:00'
           }}
-          select={handleDateSelect}
+          dateClick={handleDateClick} // Handle clicks on calendar dates/times
           eventClick={handleEventClick}
           eventChange={handleEventChange}
           eventReceive={handleEventReceive}
@@ -359,7 +373,8 @@ export default function CalendarView() {
 
       {/* Instructions */}
       <div className="absolute bottom-4 right-4 bg-black/75 text-white text-xs px-3 py-2 rounded-md pointer-events-none">
-        <div>Double-click: Edit</div>
+        <div>Double-click empty slot: Create</div>
+        <div>Double-click time block: Edit</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
