@@ -139,9 +139,9 @@ export default function CalendarView() {
   const handleEventChange = (changeInfo: any) => {
     const { event, revert } = changeInfo;
     
-    // Check for conflicts before updating
+    // Check for conflicts before updating (excluding the current event)
     if (checkTimeConflict(event.start, event.end, event.id)) {
-      showConflictMessage('Cannot move time block: Time slot is already occupied');
+      showConflictMessage('Cannot move/resize time block: Time slot is already occupied');
       revert(); // Revert the change
       return;
     }
@@ -295,6 +295,9 @@ export default function CalendarView() {
           snapDuration="00:05:00"
           selectOverlap={false} // Prevent selection over existing events
           eventOverlap={false} // Prevent event overlap - 关键设置！
+          eventResizableFromStart={true} // 允许从开始时间调整大小
+          eventDurationEditable={true} // 允许调整持续时间
+          eventStartEditable={true} // 允许调整开始时间
           eventConstraint={{
             start: '06:00',
             end: '22:00'
@@ -364,7 +367,7 @@ export default function CalendarView() {
             const displayTitle = shouldTruncate ? `${info.event.title.substring(0, 30)}...` : info.event.title;
             
             return (
-              <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options)`}>
+              <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options, Drag edges to resize)`}>
                 <div 
                   className={cn(
                     "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200",
@@ -449,6 +452,8 @@ export default function CalendarView() {
         <div className="text-yellow-300 font-medium">📋 Instructions:</div>
         <div>Double-click: Create time block</div>
         <div>Double-click block: Edit</div>
+        <div>Drag edges: Resize</div>
+        <div>Drag center: Move</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
@@ -503,10 +508,54 @@ export default function CalendarView() {
           background-image: none !important;
         }
         
-        /* 移除任何可能的进度指示器 */
-        .fc-event .fc-event-resizer,
-        .fc-event .fc-event-bg,
-        .fc-event-bg {
+        /* 启用调整大小功能 - 显示调整手柄 */
+        .fc-event-resizer {
+          display: block !important;
+          position: absolute !important;
+          z-index: 9999 !important;
+          background: rgba(59, 130, 246, 0.8) !important;
+          border: 1px solid rgba(59, 130, 246, 1) !important;
+          width: 8px !important;
+          height: 8px !important;
+          border-radius: 50% !important;
+          cursor: ns-resize !important;
+        }
+        
+        .fc-event-resizer-start {
+          top: -4px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          cursor: n-resize !important;
+        }
+        
+        .fc-event-resizer-end {
+          bottom: -4px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          cursor: s-resize !important;
+        }
+        
+        /* 悬停时显示调整手柄 */
+        .fc-event:hover .fc-event-resizer {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        
+        .fc-event .fc-event-resizer {
+          opacity: 0 !important;
+          visibility: hidden !important;
+          transition: opacity 0.2s ease !important;
+        }
+        
+        /* 选中时显示调整手柄 */
+        .fc-event.fc-event-selected .fc-event-resizer,
+        .fc-event[class*="ring-2"] .fc-event-resizer {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        
+        /* 移除任何可能的进度指示器，但保留调整手柄 */
+        .fc-event .fc-event-bg {
           display: none !important;
         }
         
@@ -557,6 +606,19 @@ export default function CalendarView() {
           background-position: initial !important;
           background-repeat: initial !important;
           background-size: initial !important;
+        }
+        
+        /* 确保拖拽和调整大小时的视觉反馈 */
+        .fc-event-dragging {
+          opacity: 0.8 !important;
+          transform: scale(1.05) !important;
+          z-index: 1000 !important;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        .fc-event-resizing {
+          opacity: 0.9 !important;
+          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
         }
       `}</style>
     </div>
