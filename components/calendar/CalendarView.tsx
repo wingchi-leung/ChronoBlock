@@ -33,22 +33,30 @@ export default function CalendarView() {
       if (e.key === 'Escape') {
         setSelectedTimeBlockId(null);
         setContextMenu(null);
-        setInlineEditingId(null);
+        if (inlineEditingId) {
+          setInlineEditingId(null);
+          setEditValue('');
+        }
       }
     };
 
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Don't handle clicks if we're editing
+      if (inlineEditingId) {
+        // Only close editing if clicking outside the editing area
+        const isEditingArea = target.closest('.editing-area') || target.closest('textarea');
+        if (!isEditingArea) {
+          handleSaveInlineEdit(inlineEditingId);
+        }
+        return;
+      }
+      
       setContextMenu(null);
       
       // Check if click is outside any time block
-      const target = e.target as HTMLElement;
       const isTimeBlockClick = target.closest('.fc-event');
-      const isEditingArea = target.closest('.editing-area');
-      
-      if (!isTimeBlockClick && !isEditingArea && inlineEditingId) {
-        // Save and exit editing mode when clicking outside
-        handleSaveInlineEdit(inlineEditingId);
-      }
       
       if (!isTimeBlockClick) {
         // Clear selection when clicking outside time blocks
@@ -57,11 +65,11 @@ export default function CalendarView() {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside); // Use mousedown instead of click
     
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [selectedTimeBlockId, inlineEditingId, deleteTimeBlock]);
 
@@ -158,16 +166,6 @@ export default function CalendarView() {
     if (clickInfo.jsEvent.detail === 2) {
       setInlineEditingId(event.id);
       setEditValue(timeBlock.title);
-    }
-  };
-
-  // Function to handle mouse leave from time block
-  const handleEventMouseLeave = (mouseLeaveInfo: any) => {
-    const { event } = mouseLeaveInfo;
-    
-    // If this time block is being edited, save and exit editing mode
-    if (inlineEditingId === event.id) {
-      handleSaveInlineEdit(event.id);
     }
   };
 
@@ -297,7 +295,6 @@ export default function CalendarView() {
           dateClick={handleDateClick} // Use dateClick instead of select for double-click detection
           select={handleDateSelect} // Keep this to clear selections
           eventClick={handleEventClick}
-          eventMouseLeave={handleEventMouseLeave} // Add mouse leave handler
           eventChange={handleEventChange}
           eventReceive={handleEventReceive}
           drop={handleDrop}
@@ -308,7 +305,7 @@ export default function CalendarView() {
             
             if (isEditing) {
               return (
-                <div className="editing-area h-full w-full flex flex-col overflow-hidden relative">
+                <div className="editing-area h-full w-full flex flex-col overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
                   {/* Time display */}
                   <div className="text-xs font-medium mb-1 text-gray-900 dark:text-gray-100 px-2 pt-1 flex-shrink-0">
                     {info.timeText}
@@ -320,6 +317,7 @@ export default function CalendarView() {
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => {
+                        e.stopPropagation(); // Prevent event bubbling
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           handleSaveInlineEdit(info.event.id);
@@ -328,7 +326,8 @@ export default function CalendarView() {
                           handleCancelInlineEdit();
                         }
                       }}
-                      onBlur={() => handleSaveInlineEdit(info.event.id)}
+                      onClick={(e) => e.stopPropagation()} // Prevent click from bubbling
+                      onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from bubbling
                       className="absolute inset-0 w-full h-full text-sm bg-transparent resize-none text-gray-900 dark:text-gray-100 focus:outline-none border-none p-2 leading-relaxed"
                       style={{
                         background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
@@ -441,13 +440,15 @@ export default function CalendarView() {
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
       </div>
 
-      {/* Custom CSS to hide progress bars */}
+      {/* Enhanced CSS to completely hide progress bars and fix editing */}
       <style jsx global>{`
+        /* Completely hide all progress-related elements */
         .fc-event-no-progress .fc-event-main {
           overflow: hidden !important;
         }
         
-        .fc-event-no-progress .fc-event-main::after {
+        .fc-event-no-progress .fc-event-main::after,
+        .fc-event-no-progress .fc-event-main::before {
           display: none !important;
         }
         
@@ -465,18 +466,62 @@ export default function CalendarView() {
         /* Hide any potential progress indicators */
         .fc-event .fc-event-resizer,
         .fc-event .fc-event-main::after,
-        .fc-event .fc-event-main::before {
+        .fc-event .fc-event-main::before,
+        .fc-event .fc-event-bg,
+        .fc-event .fc-event-bg::after,
+        .fc-event .fc-event-bg::before {
           display: none !important;
         }
         
         /* Ensure clean event rendering */
         .fc-event {
           overflow: hidden !important;
+          position: relative !important;
         }
         
         .fc-event-main {
           padding: 0 !important;
           overflow: hidden !important;
+          position: relative !important;
+        }
+        
+        /* Prevent any pseudo-elements that might create progress bars */
+        .fc-event *::after,
+        .fc-event *::before {
+          content: none !important;
+        }
+        
+        /* Ensure editing area stays focused */
+        .editing-area {
+          position: relative !important;
+          z-index: 1000 !important;
+        }
+        
+        .editing-area textarea {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          z-index: 1001 !important;
+        }
+        
+        /* Hide FullCalendar's built-in progress rendering */
+        .fc-event-main-frame .fc-event-title-container::after,
+        .fc-event-main-frame .fc-event-title-container::before,
+        .fc-event-title-container::after,
+        .fc-event-title-container::before {
+          display: none !important;
+        }
+        
+        /* Remove any background progress elements */
+        .fc-event-bg {
+          display: none !important;
+        }
+        
+        /* Ensure no progress bars appear */
+        .fc-event[style*="background"] {
+          background: none !important;
         }
       `}</style>
     </div>
