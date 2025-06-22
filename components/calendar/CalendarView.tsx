@@ -43,12 +43,20 @@ export default function CalendarView() {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       
-      // Don't handle clicks if we're editing
+      // Handle editing state
       if (inlineEditingId) {
-        // Only close editing if clicking outside the editing area
-        const isEditingArea = target.closest('.editing-area') || target.closest('textarea');
+        // Check if clicking inside the editing area
+        const isEditingArea = target.closest('.editing-area') || 
+                             target.closest('textarea') ||
+                             target.tagName.toLowerCase() === 'textarea';
+        
         if (!isEditingArea) {
-          handleSaveInlineEdit(inlineEditingId);
+          // Save and exit editing mode when clicking outside
+          if (editValue.trim()) {
+            updateTimeBlock(inlineEditingId, { title: editValue.trim() });
+          }
+          setInlineEditingId(null);
+          setEditValue('');
         }
         return;
       }
@@ -65,13 +73,13 @@ export default function CalendarView() {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleClickOutside); // Use mousedown instead of click
+    document.addEventListener('mousedown', handleClickOutside);
     
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [selectedTimeBlockId, inlineEditingId, deleteTimeBlock]);
+  }, [selectedTimeBlockId, inlineEditingId, editValue, deleteTimeBlock, updateTimeBlock]);
 
   // Auto-hide conflict message
   useEffect(() => {
@@ -305,7 +313,11 @@ export default function CalendarView() {
             
             if (isEditing) {
               return (
-                <div className="editing-area h-full w-full flex flex-col overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  className="editing-area h-full w-full flex flex-col overflow-hidden relative" 
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
                   {/* Time display */}
                   <div className="text-xs font-medium mb-1 text-gray-900 dark:text-gray-100 px-2 pt-1 flex-shrink-0">
                     {info.timeText}
@@ -385,6 +397,7 @@ export default function CalendarView() {
               'transition-all duration-200',
               // Remove any classes that might cause progress bars
               'fc-event-no-progress',
+              'fc-event-clean', // Add custom class for clean rendering
               isEditing 
                 ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
                 : isSelected
@@ -440,20 +453,34 @@ export default function CalendarView() {
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
       </div>
 
-      {/* Enhanced CSS to completely hide progress bars and fix editing */}
+      {/* Enhanced CSS to completely eliminate progress bars */}
       <style jsx global>{`
-        /* Completely hide all progress-related elements */
+        /* Completely disable all progress-related rendering */
+        .fc-event-clean,
+        .fc-event-clean *,
+        .fc-event-clean::before,
+        .fc-event-clean::after,
+        .fc-event-clean *::before,
+        .fc-event-clean *::after {
+          background-image: none !important;
+          background: none !important;
+        }
+        
+        /* Remove FullCalendar's progress rendering system */
         .fc-event-no-progress .fc-event-main {
           overflow: hidden !important;
+          background: none !important;
         }
         
         .fc-event-no-progress .fc-event-main::after,
         .fc-event-no-progress .fc-event-main::before {
           display: none !important;
+          content: none !important;
         }
         
         .fc-event .fc-event-main-frame {
           overflow: hidden !important;
+          background: none !important;
         }
         
         .fc-event .fc-event-time,
@@ -461,40 +488,47 @@ export default function CalendarView() {
           overflow: hidden !important;
           text-overflow: ellipsis !important;
           white-space: nowrap !important;
+          background: none !important;
         }
         
-        /* Hide any potential progress indicators */
+        /* Completely hide all potential progress elements */
         .fc-event .fc-event-resizer,
         .fc-event .fc-event-main::after,
         .fc-event .fc-event-main::before,
         .fc-event .fc-event-bg,
         .fc-event .fc-event-bg::after,
-        .fc-event .fc-event-bg::before {
+        .fc-event .fc-event-bg::before,
+        .fc-event-bg {
           display: none !important;
+          content: none !important;
         }
         
         /* Ensure clean event rendering */
         .fc-event {
           overflow: hidden !important;
           position: relative !important;
+          background: none !important;
         }
         
         .fc-event-main {
           padding: 0 !important;
           overflow: hidden !important;
           position: relative !important;
+          background: none !important;
         }
         
         /* Prevent any pseudo-elements that might create progress bars */
         .fc-event *::after,
         .fc-event *::before {
           content: none !important;
+          display: none !important;
         }
         
         /* Ensure editing area stays focused */
         .editing-area {
           position: relative !important;
           z-index: 1000 !important;
+          background: none !important;
         }
         
         .editing-area textarea {
@@ -512,16 +546,38 @@ export default function CalendarView() {
         .fc-event-title-container::after,
         .fc-event-title-container::before {
           display: none !important;
+          content: none !important;
         }
         
-        /* Remove any background progress elements */
-        .fc-event-bg {
-          display: none !important;
-        }
-        
-        /* Ensure no progress bars appear */
-        .fc-event[style*="background"] {
+        /* Disable all background progress elements */
+        .fc-event[style*="background"],
+        .fc-event[style*="linear-gradient"],
+        .fc-event[style*="progress"] {
           background: none !important;
+          background-image: none !important;
+        }
+        
+        /* Force clean rendering for all event elements */
+        .fc-event-clean .fc-event-main-frame,
+        .fc-event-clean .fc-event-title-container,
+        .fc-event-clean .fc-event-time,
+        .fc-event-clean .fc-event-title {
+          background: none !important;
+          background-image: none !important;
+        }
+        
+        /* Override any inline styles that might add progress bars */
+        .fc-event[style] {
+          background-image: none !important;
+        }
+        
+        /* Ensure no progress indicators appear anywhere */
+        .fc-event .fc-event-main-frame::after,
+        .fc-event .fc-event-main-frame::before,
+        .fc-event-main-frame::after,
+        .fc-event-main-frame::before {
+          display: none !important;
+          content: none !important;
         }
       `}</style>
     </div>
