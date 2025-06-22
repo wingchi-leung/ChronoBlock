@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 
 export default function CalendarView() {
   const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, convertTaskToTimeBlock, checkTimeConflict } = useStore();
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   const [selectedTimeBlockId, setSelectedTimeBlockId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; timeBlockId: string } | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function CalendarView() {
   // Handle keyboard events for deletion
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Delete' && selectedTimeBlockId) {
+      if (e.key === 'Delete' && selectedTimeBlockId && !inlineEditingId) {
         e.preventDefault();
         deleteTimeBlock(selectedTimeBlockId);
         setSelectedTimeBlockId(null);
@@ -31,14 +33,29 @@ export default function CalendarView() {
       if (e.key === 'Escape') {
         setSelectedTimeBlockId(null);
         setContextMenu(null);
+        if (inlineEditingId) {
+          setInlineEditingId(null);
+          setEditValue('');
+        }
       }
     };
 
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Don't handle clicks if we're editing
+      if (inlineEditingId) {
+        // Only close editing if clicking outside the editing area
+        const isEditingArea = target.closest('.editing-area') || target.closest('textarea');
+        if (!isEditingArea) {
+          handleSaveInlineEdit(inlineEditingId);
+        }
+        return;
+      }
+      
       setContextMenu(null);
       
       // Check if click is outside any time block
-      const target = e.target as HTMLElement;
       const isTimeBlockClick = target.closest('.fc-event');
       
       if (!isTimeBlockClick) {
@@ -48,13 +65,13 @@ export default function CalendarView() {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside); // Use mousedown instead of click
     
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [selectedTimeBlockId, deleteTimeBlock]);
+  }, [selectedTimeBlockId, inlineEditingId, deleteTimeBlock]);
 
   // Auto-hide conflict message
   useEffect(() => {
@@ -132,9 +149,11 @@ export default function CalendarView() {
     }
   };
 
-  // Function to handle clicking on a time block
+  // Function to handle double-clicking on a time block to edit it inline
   const handleEventClick = (clickInfo: any) => {
     const { event } = clickInfo;
+    const timeBlock = timeBlocks.find(block => block.id === event.id);
+    if (!timeBlock) return;
     
     // Prevent default calendar behavior
     clickInfo.jsEvent.preventDefault();
@@ -143,16 +162,10 @@ export default function CalendarView() {
     // Set as selected
     setSelectedTimeBlockId(event.id);
     
-    // Handle double click for editing
+    // Start inline editing on double click
     if (clickInfo.jsEvent.detail === 2) {
-      // Start inline editing with a simple prompt
-      const timeBlock = timeBlocks.find(block => block.id === event.id);
-      if (timeBlock) {
-        const newTitle = prompt('Edit time block title:', timeBlock.title);
-        if (newTitle !== null && newTitle.trim() !== '') {
-          updateTimeBlock(event.id, { title: newTitle.trim() });
-        }
-      }
+      setInlineEditingId(event.id);
+      setEditValue(timeBlock.title);
     }
   };
 
@@ -170,26 +183,11 @@ export default function CalendarView() {
     });
   };
 
-  // Function to handle context menu actions
-  const handleContextMenuAction = (action: string, timeBlockId: string) => {
-    const timeBlock = timeBlocks.find(block => block.id === timeBlockId);
-    if (!timeBlock) return;
-
-    switch (action) {
-      case 'edit':
-        const newTitle = prompt('Edit time block title:', timeBlock.title);
-        if (newTitle !== null && newTitle.trim() !== '') {
-          updateTimeBlock(timeBlockId, { title: newTitle.trim() });
-        }
-        break;
-      case 'delete':
-        if (confirm('Are you sure you want to delete this time block?')) {
-          deleteTimeBlock(timeBlockId);
-          setSelectedTimeBlockId(null);
-        }
-        break;
-    }
+  // Function to handle context menu delete
+  const handleContextMenuDelete = (timeBlockId: string) => {
+    deleteTimeBlock(timeBlockId);
     setContextMenu(null);
+    setSelectedTimeBlockId(null);
   };
 
   // Function to handle dropping a task onto the calendar with conflict checking
@@ -243,6 +241,21 @@ export default function CalendarView() {
     }
   };
 
+  // Function to save inline edit
+  const handleSaveInlineEdit = (eventId: string) => {
+    if (editValue.trim()) {
+      updateTimeBlock(eventId, { title: editValue.trim() });
+    }
+    setInlineEditingId(null);
+    setEditValue('');
+  };
+
+  // Function to cancel inline edit
+  const handleCancelInlineEdit = () => {
+    setInlineEditingId(null);
+    setEditValue('');
+  };
+
   return (
     <div className="w-full h-full relative">
       <div className="h-full border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden bg-white dark:bg-gray-900">
@@ -274,6 +287,7 @@ export default function CalendarView() {
           snapDuration="00:05:00"
           selectOverlap={false} // Prevent selection over existing events
           eventOverlap={false} // Prevent event overlap
+          progressiveEventRendering={false} // Disable progressive rendering to prevent progress bars
           selectConstraint={{
             start: '06:00',
             end: '22:00'
@@ -286,7 +300,50 @@ export default function CalendarView() {
           drop={handleDrop}
           events={timeBlocks}
           eventContent={(info) => {
+            const isEditing = inlineEditingId === info.event.id;
             const isSelected = selectedTimeBlockId === info.event.id;
+            
+            if (isEditing) {
+              return (
+                <div className="editing-area h-full w-full flex flex-col overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
+                  {/* Time display */}
+                  <div className="text-xs font-medium mb-1 text-gray-900 dark:text-gray-100 px-2 pt-1 flex-shrink-0">
+                    {info.timeText}
+                  </div>
+                  
+                  {/* Full-size editing area */}
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSaveInlineEdit(info.event.id);
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          handleCancelInlineEdit();
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()} // Prevent click from bubbling
+                      onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from bubbling
+                      className="absolute inset-0 w-full h-full text-sm bg-transparent resize-none text-gray-900 dark:text-gray-100 focus:outline-none border-none p-2 leading-relaxed"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '6px',
+                        boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.3)'
+                      }}
+                      autoFocus
+                      onFocus={(e) => e.target.select()}
+                      placeholder="Enter time block title..."
+                    />
+                  </div>
+                </div>
+              );
+            }
+            
             const titleLength = info.event.title.length;
             const shouldTruncate = titleLength > 30;
             const displayTitle = shouldTruncate ? `${info.event.title.substring(0, 30)}...` : info.event.title;
@@ -320,16 +377,23 @@ export default function CalendarView() {
             );
           }}
           eventClassNames={(info) => {
+            const isEditing = inlineEditingId === info.event.id;
             const isSelected = selectedTimeBlockId === info.event.id;
             return [
               'border-2 border-gray-800 dark:border-gray-200',
               'cursor-pointer',
               'transition-all duration-200',
-              isSelected
+              // Remove any classes that might cause progress bars
+              'fc-event-no-progress',
+              isEditing 
+                ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
+                : isSelected
                 ? 'ring-2 ring-blue-400 shadow-md'
                 : 'hover:shadow-md hover:transform hover:scale-[1.01]',
               // Enhanced background with gradient
-              'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-800'
+              isEditing
+                ? 'bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30'
+                : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-800'
             ];
           }}
         />
@@ -345,17 +409,8 @@ export default function CalendarView() {
           }}
         >
           <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-2"
-            onClick={() => handleContextMenuAction('edit', contextMenu.timeBlockId)}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit
-          </button>
-          <button
             className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center gap-2"
-            onClick={() => handleContextMenuAction('delete', contextMenu.timeBlockId)}
+            onClick={() => handleContextMenuDelete(contextMenu.timeBlockId)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -379,31 +434,42 @@ export default function CalendarView() {
       <div className="absolute bottom-4 right-4 bg-black/75 text-white text-xs px-3 py-2 rounded-md pointer-events-none">
         <div className="text-yellow-300 font-medium">📋 Instructions:</div>
         <div>Double-click: Create time block</div>
-        <div>Double-click block: Edit title</div>
-        <div>Right-click: Menu options</div>
+        <div>Double-click block: Edit</div>
+        <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
       </div>
 
-      {/* CSS to completely remove progress bars */}
+      {/* Enhanced CSS to completely hide progress bars and fix editing */}
       <style jsx global>{`
-        /* Completely remove all FullCalendar progress elements */
+        /* Completely hide all progress-related elements */
+        .fc-event-no-progress .fc-event-main {
+          overflow: hidden !important;
+        }
+        
+        .fc-event-no-progress .fc-event-main::after,
+        .fc-event-no-progress .fc-event-main::before {
+          display: none !important;
+        }
+        
+        .fc-event .fc-event-main-frame {
+          overflow: hidden !important;
+        }
+        
+        .fc-event .fc-event-time,
+        .fc-event .fc-event-title {
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+        }
+        
+        /* Hide any potential progress indicators */
+        .fc-event .fc-event-resizer,
         .fc-event .fc-event-main::after,
         .fc-event .fc-event-main::before,
         .fc-event .fc-event-bg,
         .fc-event .fc-event-bg::after,
-        .fc-event .fc-event-bg::before,
-        .fc-event .fc-event-resizer,
-        .fc-event-main-frame .fc-event-title-container::after,
-        .fc-event-main-frame .fc-event-title-container::before,
-        .fc-event-title-container::after,
-        .fc-event-title-container::before {
-          display: none !important;
-          content: none !important;
-        }
-        
-        /* Remove any background progress elements */
-        .fc-event-bg {
+        .fc-event .fc-event-bg::before {
           display: none !important;
         }
         
@@ -423,20 +489,39 @@ export default function CalendarView() {
         .fc-event *::after,
         .fc-event *::before {
           content: none !important;
+        }
+        
+        /* Ensure editing area stays focused */
+        .editing-area {
+          position: relative !important;
+          z-index: 1000 !important;
+        }
+        
+        .editing-area textarea {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          z-index: 1001 !important;
+        }
+        
+        /* Hide FullCalendar's built-in progress rendering */
+        .fc-event-main-frame .fc-event-title-container::after,
+        .fc-event-main-frame .fc-event-title-container::before,
+        .fc-event-title-container::after,
+        .fc-event-title-container::before {
           display: none !important;
         }
         
-        /* Remove any background progress styling */
-        .fc-event[style*="background"] {
-          background: none !important;
+        /* Remove any background progress elements */
+        .fc-event-bg {
+          display: none !important;
         }
         
-        /* Hide any potential progress indicators */
-        .fc-event .fc-event-time,
-        .fc-event .fc-event-title {
-          overflow: hidden !important;
-          text-overflow: ellipsis !important;
-          white-space: nowrap !important;
+        /* Ensure no progress bars appear */
+        .fc-event[style*="background"] {
+          background: none !important;
         }
       `}</style>
     </div>
