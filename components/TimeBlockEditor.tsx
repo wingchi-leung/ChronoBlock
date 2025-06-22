@@ -42,13 +42,21 @@ export default function TimeBlockEditor({
       ...timeBlock,
       title
     });
+    // Explicitly blur the input to remove focus
+    inputRef.current?.blur();
+  };
+  
+  const handleCancel = () => {
+    // Explicitly blur the input to remove focus
+    inputRef.current?.blur();
+    onCancel();
   };
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
-      onCancel();
+      handleCancel();
     }
   };
   
