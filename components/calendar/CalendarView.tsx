@@ -294,8 +294,11 @@ export default function CalendarView() {
           slotDuration="00:15:00"
           snapDuration="00:05:00"
           selectOverlap={false} // Prevent selection over existing events
-          eventOverlap={false} // Prevent event overlap
-          progressiveEventRendering={false} // Disable progressive rendering to prevent progress bars
+          eventOverlap={false} // Prevent event overlap - 关键设置！
+          eventConstraint={{
+            start: '06:00',
+            end: '22:00'
+          }}
           selectConstraint={{
             start: '06:00',
             end: '22:00'
@@ -395,9 +398,7 @@ export default function CalendarView() {
               'border-2 border-gray-800 dark:border-gray-200',
               'cursor-pointer',
               'transition-all duration-200',
-              // Remove any classes that might cause progress bars
-              'fc-event-no-progress',
-              'fc-event-clean', // Add custom class for clean rendering
+              'fc-event-clean', // Custom class for clean rendering
               isEditing 
                 ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
                 : isSelected
@@ -453,103 +454,74 @@ export default function CalendarView() {
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
       </div>
 
-      {/* Enhanced CSS to completely eliminate progress bars */}
+      {/* 完全移除进度条的CSS */}
       <style jsx global>{`
-        /* Completely disable all progress-related rendering */
-        .fc-event-clean,
-        .fc-event-clean *,
-        .fc-event-clean::before,
-        .fc-event-clean::after,
-        .fc-event-clean *::before,
-        .fc-event-clean *::after {
+        /* 彻底禁用所有进度条相关的渲染 */
+        .fc-event,
+        .fc-event *,
+        .fc-event::before,
+        .fc-event::after,
+        .fc-event *::before,
+        .fc-event *::after {
           background-image: none !important;
+          background-size: 0 !important;
+          background-position: 0 !important;
+          background-repeat: no-repeat !important;
+        }
+        
+        /* 强制移除FullCalendar的内置进度条 */
+        .fc-event-main,
+        .fc-event-main-frame,
+        .fc-event-title-container,
+        .fc-event-time,
+        .fc-event-title {
           background: none !important;
-        }
-        
-        /* Remove FullCalendar's progress rendering system */
-        .fc-event-no-progress .fc-event-main {
-          overflow: hidden !important;
-          background: none !important;
-        }
-        
-        .fc-event-no-progress .fc-event-main::after,
-        .fc-event-no-progress .fc-event-main::before {
-          display: none !important;
-          content: none !important;
-        }
-        
-        .fc-event .fc-event-main-frame {
-          overflow: hidden !important;
-          background: none !important;
-        }
-        
-        .fc-event .fc-event-time,
-        .fc-event .fc-event-title {
-          overflow: hidden !important;
-          text-overflow: ellipsis !important;
-          white-space: nowrap !important;
-          background: none !important;
-        }
-        
-        /* Completely hide all potential progress elements */
-        .fc-event .fc-event-resizer,
-        .fc-event .fc-event-main::after,
-        .fc-event .fc-event-main::before,
-        .fc-event .fc-event-bg,
-        .fc-event .fc-event-bg::after,
-        .fc-event .fc-event-bg::before,
-        .fc-event-bg {
-          display: none !important;
-          content: none !important;
-        }
-        
-        /* Ensure clean event rendering */
-        .fc-event {
-          overflow: hidden !important;
+          background-image: none !important;
           position: relative !important;
-          background: none !important;
         }
         
-        .fc-event-main {
-          padding: 0 !important;
-          overflow: hidden !important;
-          position: relative !important;
-          background: none !important;
-        }
-        
-        /* Prevent any pseudo-elements that might create progress bars */
-        .fc-event *::after,
-        .fc-event *::before {
-          content: none !important;
-          display: none !important;
-        }
-        
-        /* Ensure editing area stays focused */
-        .editing-area {
-          position: relative !important;
-          z-index: 1000 !important;
-          background: none !important;
-        }
-        
-        .editing-area textarea {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          z-index: 1001 !important;
-        }
-        
-        /* Hide FullCalendar's built-in progress rendering */
-        .fc-event-main-frame .fc-event-title-container::after,
-        .fc-event-main-frame .fc-event-title-container::before,
+        /* 移除所有可能的伪元素进度条 */
+        .fc-event-main::after,
+        .fc-event-main::before,
+        .fc-event-main-frame::after,
+        .fc-event-main-frame::before,
         .fc-event-title-container::after,
         .fc-event-title-container::before {
           display: none !important;
           content: none !important;
+          background: none !important;
+          background-image: none !important;
         }
         
-        /* Disable all background progress elements */
+        /* 确保编辑区域干净 */
+        .editing-area,
+        .editing-area *,
+        .editing-area::before,
+        .editing-area::after,
+        .editing-area *::before,
+        .editing-area *::after {
+          background-image: none !important;
+        }
+        
+        /* 移除任何可能的进度指示器 */
+        .fc-event .fc-event-resizer,
+        .fc-event .fc-event-bg,
+        .fc-event-bg {
+          display: none !important;
+        }
+        
+        /* 强制清理所有事件元素 */
+        .fc-event-clean {
+          background: none !important;
+          background-image: none !important;
+        }
+        
+        .fc-event-clean * {
+          background: none !important;
+          background-image: none !important;
+        }
+        
+        /* 覆盖任何内联样式 */
         .fc-event[style*="background"],
         .fc-event[style*="linear-gradient"],
         .fc-event[style*="progress"] {
@@ -557,27 +529,34 @@ export default function CalendarView() {
           background-image: none !important;
         }
         
-        /* Force clean rendering for all event elements */
-        .fc-event-clean .fc-event-main-frame,
-        .fc-event-clean .fc-event-title-container,
-        .fc-event-clean .fc-event-time,
-        .fc-event-clean .fc-event-title {
+        /* 确保textarea编辑器正常显示 */
+        .editing-area textarea {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          z-index: 1001 !important;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%) !important;
+        }
+        
+        /* 完全禁用FullCalendar的进度渲染系统 */
+        .fc-event-main-frame .fc-event-title-container {
+          overflow: hidden !important;
           background: none !important;
-          background-image: none !important;
         }
         
-        /* Override any inline styles that might add progress bars */
-        .fc-event[style] {
+        /* 移除所有可能导致进度条的CSS属性 */
+        .fc-event * {
+          background-attachment: initial !important;
+          background-blend-mode: initial !important;
+          background-clip: initial !important;
+          background-color: transparent !important;
           background-image: none !important;
-        }
-        
-        /* Ensure no progress indicators appear anywhere */
-        .fc-event .fc-event-main-frame::after,
-        .fc-event .fc-event-main-frame::before,
-        .fc-event-main-frame::after,
-        .fc-event-main-frame::before {
-          display: none !important;
-          content: none !important;
+          background-origin: initial !important;
+          background-position: initial !important;
+          background-repeat: initial !important;
+          background-size: initial !important;
         }
       `}</style>
     </div>
