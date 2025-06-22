@@ -21,13 +21,13 @@ export default function TimeBlockList({ timeBlocks, selectedDate }: TimeBlockLis
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   
   const handleAddTimeBlock = () => {
-    // Create a new time block at 9am on the selected day
+    // Create a new time block at 9am on the selected day with 45 minutes duration
     const date = new Date(selectedDate);
     date.setHours(9, 0, 0, 0);
     
     // Check for conflicts before creating
     const endTime = new Date(date);
-    endTime.setMinutes(date.getMinutes() + 30); // 30 minutes default
+    endTime.setMinutes(date.getMinutes() + 45); // 45 minutes default
     
     if (checkTimeConflict(date, endTime)) {
       setConflictMessage('Cannot create time block: 9:00 AM slot is already occupied');
@@ -107,14 +107,14 @@ export default function TimeBlockList({ timeBlocks, selectedDate }: TimeBlockLis
               return (
                 <div 
                   key={timeBlock.id}
-                  className="group p-3 border-2 border-gray-800 dark:border-gray-200 rounded-md bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="group p-3 border-2 border-gray-800 dark:border-gray-200 rounded-md bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-200 cursor-pointer hover:shadow-md hover:transform hover:scale-[1.02]"
                   style={{ 
                     boxShadow: '3px 3px 0 rgba(0, 0, 0, 0.1)',
                   }}
                   onDoubleClick={(e) => handleEditTimeBlock(timeBlock, e)}
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{timeBlock.title}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{timeBlock.title}</p>
                     <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
@@ -140,7 +140,7 @@ export default function TimeBlockList({ timeBlocks, selectedDate }: TimeBlockLis
                       </Button>
                     </div>
                   </div>
-                  <div className="flex items-center mt-1 text-xs text-muted-foreground font-mono">
+                  <div className="flex items-center mt-1 text-xs text-gray-700 dark:text-gray-300 font-mono">
                     <span>{format(startTime, 'HH:mm')}</span>
                     <span className="mx-1">-</span>
                     <span>{format(endTime, 'HH:mm')}</span>

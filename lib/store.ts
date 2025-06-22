@@ -68,7 +68,8 @@ export const useStore = create<State>()(
       },
       
       addTimeBlock: (start, end, title = 'New Time Block') => {
-        const endTime = end || addMinutes(start, 30);
+        // Increase default duration to 45 minutes for better visibility
+        const endTime = end || addMinutes(start, 45);
         
         // Check for conflicts
         if (get().checkTimeConflict(start, endTime)) {
@@ -123,7 +124,7 @@ export const useStore = create<State>()(
         const task = tasks.find(t => t.id === taskId);
         if (!task) return false;
         
-        const duration = task.estimatedDuration || 30;
+        const duration = task.estimatedDuration || 45; // Increased default duration
         const end = addMinutes(start, duration);
         
         // Check for conflicts

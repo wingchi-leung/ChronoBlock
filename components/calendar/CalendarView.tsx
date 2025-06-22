@@ -18,6 +18,8 @@ export default function CalendarView() {
   const [selectedTimeBlockId, setSelectedTimeBlockId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; timeBlockId: string } | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
+  const [lastClickInfo, setLastClickInfo] = useState<any>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   // Handle keyboard events for deletion
@@ -31,11 +33,27 @@ export default function CalendarView() {
       if (e.key === 'Escape') {
         setSelectedTimeBlockId(null);
         setContextMenu(null);
+        setInlineEditingId(null);
       }
     };
 
     const handleClickOutside = (e: MouseEvent) => {
       setContextMenu(null);
+      
+      // Check if click is outside any time block
+      const target = e.target as HTMLElement;
+      const isTimeBlockClick = target.closest('.fc-event');
+      const isEditingArea = target.closest('.editing-area');
+      
+      if (!isTimeBlockClick && !isEditingArea && inlineEditingId) {
+        // Save and exit editing mode when clicking outside
+        handleSaveInlineEdit(inlineEditingId);
+      }
+      
+      if (!isTimeBlockClick) {
+        // Clear selection when clicking outside time blocks
+        setSelectedTimeBlockId(null);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -62,25 +80,40 @@ export default function CalendarView() {
     setConflictMessage(message);
   };
 
-  // Function to handle time block creation with conflict checking
-  const handleDateSelect = (selectInfo: any) => {
-    const { start, end } = selectInfo;
+  // Function to handle double-click for time block creation
+  const handleDateClick = (clickInfo: any) => {
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastClickTime;
     
-    // Check for conflicts before creating
-    if (checkTimeConflict(start, end)) {
-      showConflictMessage('Cannot create time block: Time slot is already occupied');
-      if (calendarRef.current) {
-        calendarRef.current.getApi().unselect();
+    // Check if this is a double-click (within 300ms and same location)
+    if (timeDiff < 300 && lastClickInfo && 
+        Math.abs(lastClickInfo.jsEvent.clientX - clickInfo.jsEvent.clientX) < 10 &&
+        Math.abs(lastClickInfo.jsEvent.clientY - clickInfo.jsEvent.clientY) < 10) {
+      
+      // This is a double-click, create time block
+      const { date } = clickInfo;
+      const endTime = addMinutes(date, 45); // 45 minutes default
+      
+      // Check for conflicts before creating
+      if (checkTimeConflict(date, endTime)) {
+        showConflictMessage('Cannot create time block: Time slot is already occupied');
+        return;
       }
-      return;
+      
+      const newBlock = addTimeBlock(date, endTime, 'New Time Block');
+      if (!newBlock) {
+        showConflictMessage('Cannot create time block: Time conflict detected');
+      }
     }
     
-    const newBlock = addTimeBlock(start, end, 'New Time Block');
-    if (!newBlock) {
-      showConflictMessage('Cannot create time block: Time conflict detected');
-    }
-    
-    // Clear the selection
+    // Store click info for double-click detection
+    setLastClickTime(currentTime);
+    setLastClickInfo(clickInfo);
+  };
+
+  // Remove the old select handler since we're using double-click now
+  const handleDateSelect = (selectInfo: any) => {
+    // Clear the selection immediately since we don't want selection-based creation
     if (calendarRef.current) {
       calendarRef.current.getApi().unselect();
     }
@@ -128,6 +161,16 @@ export default function CalendarView() {
     }
   };
 
+  // Function to handle mouse leave from time block
+  const handleEventMouseLeave = (mouseLeaveInfo: any) => {
+    const { event } = mouseLeaveInfo;
+    
+    // If this time block is being edited, save and exit editing mode
+    if (inlineEditingId === event.id) {
+      handleSaveInlineEdit(event.id);
+    }
+  };
+
   // Function to handle right-click context menu
   const handleEventRightClick = (clickInfo: any) => {
     clickInfo.jsEvent.preventDefault();
@@ -156,7 +199,7 @@ export default function CalendarView() {
     
     if (taskData) {
       // Check for conflicts before converting
-      const duration = taskData.estimatedDuration || 30;
+      const duration = taskData.estimatedDuration || 45; // Increased default duration
       const endTime = addMinutes(event.start, duration);
       
       if (checkTimeConflict(event.start, endTime)) {
@@ -182,7 +225,7 @@ export default function CalendarView() {
       const taskData = JSON.parse(dropInfo.draggedEl.dataset.task || '{}');
       if (taskData.id) {
         // Check for conflicts before converting
-        const duration = taskData.estimatedDuration || 30;
+        const duration = taskData.estimatedDuration || 45; // Increased default duration
         const endTime = addMinutes(dropInfo.date, duration);
         
         if (checkTimeConflict(dropInfo.date, endTime)) {
@@ -246,12 +289,15 @@ export default function CalendarView() {
           snapDuration="00:05:00"
           selectOverlap={false} // Prevent selection over existing events
           eventOverlap={false} // Prevent event overlap
+          progressiveEventRendering={false} // Disable progressive rendering to prevent progress bars
           selectConstraint={{
             start: '06:00',
             end: '22:00'
           }}
-          select={handleDateSelect}
+          dateClick={handleDateClick} // Use dateClick instead of select for double-click detection
+          select={handleDateSelect} // Keep this to clear selections
           eventClick={handleEventClick}
+          eventMouseLeave={handleEventMouseLeave} // Add mouse leave handler
           eventChange={handleEventChange}
           eventReceive={handleEventReceive}
           drop={handleDrop}
@@ -262,35 +308,52 @@ export default function CalendarView() {
             
             if (isEditing) {
               return (
-                <div className="h-full w-full p-1 flex flex-col overflow-hidden">
-                  <div className="text-xs font-medium mb-1 text-gray-800 dark:text-gray-200">{info.timeText}</div>
-                  <textarea
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSaveInlineEdit(info.event.id);
-                      } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        handleCancelInlineEdit();
-                      }
-                    }}
-                    onBlur={() => handleSaveInlineEdit(info.event.id)}
-                    className="flex-1 w-full text-xs bg-transparent resize-none text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-inset rounded-sm p-1"
-                    autoFocus
-                    onFocus={(e) => e.target.select()}
-                    style={{ minHeight: '0' }}
-                  />
+                <div className="editing-area h-full w-full flex flex-col overflow-hidden relative">
+                  {/* Time display */}
+                  <div className="text-xs font-medium mb-1 text-gray-900 dark:text-gray-100 px-2 pt-1 flex-shrink-0">
+                    {info.timeText}
+                  </div>
+                  
+                  {/* Full-size editing area */}
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSaveInlineEdit(info.event.id);
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          handleCancelInlineEdit();
+                        }
+                      }}
+                      onBlur={() => handleSaveInlineEdit(info.event.id)}
+                      className="absolute inset-0 w-full h-full text-sm bg-transparent resize-none text-gray-900 dark:text-gray-100 focus:outline-none border-none p-2 leading-relaxed"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '6px',
+                        boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.3)'
+                      }}
+                      autoFocus
+                      onFocus={(e) => e.target.select()}
+                      placeholder="Enter time block title..."
+                    />
+                  </div>
                 </div>
               );
             }
             
+            const titleLength = info.event.title.length;
+            const shouldTruncate = titleLength > 30;
+            const displayTitle = shouldTruncate ? `${info.event.title.substring(0, 30)}...` : info.event.title;
+            
             return (
-              <Tooltip content={`${info.event.title} (Double-click to edit, Right-click for options)`}>
+              <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options)`}>
                 <div 
                   className={cn(
-                    "h-full w-full p-1 overflow-hidden cursor-pointer",
+                    "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200",
                     isSelected && "ring-2 ring-blue-500 ring-inset"
                   )}
                   onContextMenu={(e) => {
@@ -301,9 +364,14 @@ export default function CalendarView() {
                     });
                   }}
                 >
-                  <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{info.timeText}</div>
-                  <div className="text-xs truncate text-gray-800 dark:text-gray-200" title={info.event.title}>
-                    {info.event.title}
+                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
+                    {info.timeText}
+                  </div>
+                  <div 
+                    className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight" 
+                    title={shouldTruncate ? info.event.title : undefined}
+                  >
+                    {displayTitle}
                   </div>
                 </div>
               </Tooltip>
@@ -314,13 +382,19 @@ export default function CalendarView() {
             const isSelected = selectedTimeBlockId === info.event.id;
             return [
               'border-2 border-gray-800 dark:border-gray-200',
-              'bg-white dark:bg-gray-800',
               'cursor-pointer',
+              'transition-all duration-200',
+              // Remove any classes that might cause progress bars
+              'fc-event-no-progress',
               isEditing 
-                ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900' 
+                ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
                 : isSelected
-                ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900'
-                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                ? 'ring-2 ring-blue-400 shadow-md'
+                : 'hover:shadow-md hover:transform hover:scale-[1.01]',
+              // Enhanced background with gradient
+              isEditing
+                ? 'bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30'
+                : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-800'
             ];
           }}
         />
@@ -359,11 +433,52 @@ export default function CalendarView() {
 
       {/* Instructions */}
       <div className="absolute bottom-4 right-4 bg-black/75 text-white text-xs px-3 py-2 rounded-md pointer-events-none">
-        <div>Double-click: Edit</div>
+        <div className="text-yellow-300 font-medium">📋 Instructions:</div>
+        <div>Double-click: Create time block</div>
+        <div>Double-click block: Edit</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
         <div className="text-yellow-300 mt-1">⚠️ Overlapping prevented</div>
       </div>
+
+      {/* Custom CSS to hide progress bars */}
+      <style jsx global>{`
+        .fc-event-no-progress .fc-event-main {
+          overflow: hidden !important;
+        }
+        
+        .fc-event-no-progress .fc-event-main::after {
+          display: none !important;
+        }
+        
+        .fc-event .fc-event-main-frame {
+          overflow: hidden !important;
+        }
+        
+        .fc-event .fc-event-time,
+        .fc-event .fc-event-title {
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+        }
+        
+        /* Hide any potential progress indicators */
+        .fc-event .fc-event-resizer,
+        .fc-event .fc-event-main::after,
+        .fc-event .fc-event-main::before {
+          display: none !important;
+        }
+        
+        /* Ensure clean event rendering */
+        .fc-event {
+          overflow: hidden !important;
+        }
+        
+        .fc-event-main {
+          padding: 0 !important;
+          overflow: hidden !important;
+        }
+      `}</style>
     </div>
   );
 }
