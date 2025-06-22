@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import { Task } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, X, Check, Edit, Trash2, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Plus, X, Check, Edit, Trash2, ChevronLeft, ChevronRight, Clock, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
@@ -15,6 +15,7 @@ export default function TaskPanel() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,13 +56,23 @@ export default function TaskPanel() {
   };
 
   const handleDragStart = (e: React.DragEvent, task: Task) => {
+    setDraggedTask(task.id);
+    
+    // 设置拖拽数据
     e.dataTransfer.setData('text/plain', JSON.stringify(task));
     e.dataTransfer.effectAllowed = 'move';
     
-    // Add task data to the dragged element for easier access
+    // 添加任务数据到拖拽元素，方便日历组件访问
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.dataset.task = JSON.stringify(task);
     }
+    
+    // 设置拖拽图像样式
+    e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
   };
 
   return (
@@ -99,27 +110,45 @@ export default function TaskPanel() {
             </form>
 
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              <div className="text-xs font-medium text-muted-foreground mb-1">
-                {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+              <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center justify-between">
+                <span>{tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}</span>
+                {tasks.length > 0 && (
+                  <span className="text-xs text-blue-600 dark:text-blue-400">
+                    📌 Drag to calendar
+                  </span>
+                )}
               </div>
               
               {tasks.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">No tasks yet</p>
-                  <p className="text-xs mt-1">Create a task or drag to calendar</p>
+                  <p className="text-xs mt-1">Create a task to get started</p>
                 </div>
               )}
               
               {tasks.map((task) => (
                 <div 
                   key={task.id}
-                  className="group flex items-center gap-2 p-2 border border-border rounded-md bg-white dark:bg-gray-900 cursor-move hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
+                  className={cn(
+                    "group flex items-center gap-2 p-2 border-2 border-dashed border-gray-600 dark:border-gray-400 rounded-md bg-white dark:bg-gray-900 transition-all duration-200",
+                    draggedTask === task.id 
+                      ? "opacity-50 scale-95 border-blue-500 dark:border-blue-400" 
+                      : "cursor-move hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md hover:scale-[1.02]"
+                  )}
                   style={{ 
-                    boxShadow: '2px 2px 0 rgba(0, 0, 0, 0.1)',
+                    boxShadow: draggedTask === task.id 
+                      ? '0 4px 12px rgba(59, 130, 246, 0.3)' 
+                      : '2px 2px 0 rgba(0, 0, 0, 0.1)',
                   }}
-                  draggable
+                  draggable={editingTaskId !== task.id}
                   onDragStart={(e) => handleDragStart(e, task)}
+                  onDragEnd={handleDragEnd}
                 >
+                  {/* 拖拽手柄 */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 dark:text-gray-500">
+                    <GripVertical size={14} />
+                  </div>
+
                   {editingTaskId === task.id ? (
                     <div className="flex-1 flex items-center">
                       <Input
@@ -158,21 +187,33 @@ export default function TaskPanel() {
                         size="icon"
                         onClick={() => toggleTaskCompletion(task.id)}
                         className={cn(
-                          "h-6 w-6 rounded-full border border-input",
+                          "h-6 w-6 rounded-full border border-input flex-shrink-0",
                           task.completed ? "bg-primary border-primary" : "bg-background"
                         )}
                       >
                         {task.completed && <Check size={12} className="text-primary-foreground" />}
                       </Button>
-                      <span 
-                        className={cn(
-                          "flex-1 text-sm", 
-                          task.completed && "line-through text-muted-foreground"
+                      
+                      <div className="flex-1 min-w-0">
+                        <span 
+                          className={cn(
+                            "text-sm block truncate", 
+                            task.completed && "line-through text-muted-foreground"
+                          )}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </span>
+                        
+                        {task.estimatedDuration && (
+                          <div className="flex items-center mt-1 text-xs text-muted-foreground">
+                            <Clock size={10} className="mr-1" />
+                            <span>{task.estimatedDuration} min</span>
+                          </div>
                         )}
-                      >
-                        {task.title}
-                      </span>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex">
+                      </div>
+                      
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -195,6 +236,15 @@ export default function TaskPanel() {
                 </div>
               ))}
             </div>
+
+            {/* 拖拽提示 */}
+            {tasks.length > 0 && (
+              <div className="p-3 border-t border-border bg-muted/30">
+                <div className="text-xs text-muted-foreground text-center">
+                  💡 <strong>Tip:</strong> Drag tasks to the calendar to schedule them
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
