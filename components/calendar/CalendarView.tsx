@@ -198,29 +198,52 @@ export default function CalendarView() {
     setSelectedTimeBlockId(null);
   };
 
-  // 修复外部拖拽处理 - 这是关键！
+  // 🔥 关键修复：外部拖拽处理
   const handleDrop = (dropInfo: any) => {
-    console.log('Drop event triggered:', dropInfo);
+    console.log('🎯 Drop event triggered:', dropInfo);
+    
+    // 阻止默认行为
+    dropInfo.jsEvent.preventDefault();
     
     try {
-      // 从拖拽的元素中获取任务数据
-      const taskDataStr = dropInfo.draggedEl?.dataset?.task;
-      console.log('Task data string:', taskDataStr);
+      // 方法1：从拖拽事件的dataTransfer中获取数据
+      let taskData = null;
       
-      if (!taskDataStr) {
-        console.error('No task data found in dragged element');
+      // 尝试从dataTransfer获取数据
+      try {
+        const transferData = dropInfo.jsEvent.dataTransfer?.getData('text/plain');
+        if (transferData) {
+          taskData = JSON.parse(transferData);
+          console.log('📦 Got task data from dataTransfer:', taskData);
+        }
+      } catch (e) {
+        console.log('⚠️ Failed to get data from dataTransfer:', e);
+      }
+      
+      // 方法2：从拖拽元素的dataset获取数据
+      if (!taskData && dropInfo.draggedEl?.dataset?.task) {
+        try {
+          taskData = JSON.parse(dropInfo.draggedEl.dataset.task);
+          console.log('📦 Got task data from dataset:', taskData);
+        } catch (e) {
+          console.log('⚠️ Failed to get data from dataset:', e);
+        }
+      }
+      
+      // 方法3：从全局拖拽状态获取（如果有的话）
+      if (!taskData) {
+        console.log('❌ No task data found, checking global state...');
         return;
       }
       
-      const taskData = JSON.parse(taskDataStr);
-      console.log('Parsed task data:', taskData);
-      
       if (taskData && taskData.id) {
+        console.log('✅ Processing task:', taskData.title);
+        
         // 检查时间冲突
         const duration = taskData.estimatedDuration || 45;
         const endTime = addMinutes(dropInfo.date, duration);
         
-        console.log('Checking conflict for:', dropInfo.date, 'to', endTime);
+        console.log('🕐 Checking conflict for:', dropInfo.date, 'to', endTime);
         
         if (checkTimeConflict(dropInfo.date, endTime)) {
           showConflictMessage('Cannot drop task: Time slot is already occupied');
@@ -228,36 +251,42 @@ export default function CalendarView() {
         }
         
         // 转换任务为时间块
-        console.log('Converting task to time block...');
+        console.log('🔄 Converting task to time block...');
         const success = convertTaskToTimeBlock(taskData.id, dropInfo.date);
         
         if (success) {
-          console.log('Task converted successfully');
+          console.log('🎉 Task converted successfully!');
         } else {
           showConflictMessage('Cannot convert task: Time conflict detected');
         }
+      } else {
+        console.log('❌ Invalid task data:', taskData);
       }
     } catch (error) {
-      console.error('Error in handleDrop:', error);
+      console.error('💥 Error in handleDrop:', error);
       showConflictMessage('Error processing dropped task');
     }
   };
 
-  // 添加拖拽进入和离开的处理
+  // 🔥 关键修复：拖拽进入处理
   const handleDragEnter = (info: any) => {
-    console.log('Drag enter:', info);
-    // 允许拖拽
-    return true;
+    console.log('🚪 Drag enter:', info);
+    // 阻止默认行为，允许拖拽
+    info.jsEvent.preventDefault();
+    return false; // 返回false表示允许拖拽
+  };
+
+  // 🔥 关键修复：拖拽悬停处理
+  const handleDragOver = (info: any) => {
+    console.log('🔄 Drag over:', info);
+    // 阻止默认行为，允许拖拽
+    info.jsEvent.preventDefault();
+    info.jsEvent.dataTransfer.dropEffect = 'move'; // 设置拖拽效果
+    return false; // 返回false表示允许拖拽
   };
 
   const handleDragLeave = (info: any) => {
-    console.log('Drag leave:', info);
-  };
-
-  const handleDragOver = (info: any) => {
-    console.log('Drag over:', info);
-    // 允许拖拽
-    return true;
+    console.log('🚪 Drag leave:', info);
   };
 
   // Function to save inline edit
@@ -299,12 +328,15 @@ export default function CalendarView() {
           selectable={true}
           selectMirror={true}
           dayMaxEvents={true}
-          droppable={true} // 启用拖拽放置
-          dropAccept="*" // 接受所有拖拽元素
+          // 🔥 关键配置：启用外部拖拽
+          droppable={true}
+          dropAccept="*"
+          // 🔥 关键配置：时间相关
           slotMinTime="06:00:00"
           slotMaxTime="22:00:00"
           slotDuration="00:15:00"
           snapDuration="00:05:00"
+          // 🔥 关键配置：重叠和约束
           selectOverlap={false}
           eventOverlap={false}
           eventResizableFromStart={true}
@@ -318,16 +350,16 @@ export default function CalendarView() {
             start: '06:00',
             end: '22:00'
           }}
-          // 事件处理器
+          // 🔥 关键事件处理器
           dateClick={handleDateClick}
           select={handleDateSelect}
           eventClick={handleEventClick}
           eventChange={handleEventChange}
-          // 拖拽相关事件处理器
+          // 🔥 关键拖拽事件处理器
           drop={handleDrop}
           dragEnter={handleDragEnter}
-          dragLeave={handleDragLeave}
           dragOver={handleDragOver}
+          dragLeave={handleDragLeave}
           events={timeBlocks}
           eventContent={(info) => {
             const isEditing = inlineEditingId === info.event.id;
@@ -472,12 +504,32 @@ export default function CalendarView() {
         <div>Drag center: Move</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
-        <div className="text-green-300 mt-1">✅ Drag tasks from panel</div>
+        <div className="text-green-300 mt-1 font-bold">🎯 Drag tasks from panel!</div>
         <div className="text-yellow-300">⚠️ Overlapping prevented</div>
       </div>
 
-      {/* 完全移除进度条的CSS */}
+      {/* 🔥 完全移除进度条并启用拖拽的CSS */}
       <style jsx global>{`
+        /* 🎯 关键：启用拖拽放置区域 */
+        .fc-timegrid-body,
+        .fc-timegrid-slots,
+        .fc-timegrid-slot,
+        .fc-timegrid-slot-lane {
+          pointer-events: all !important;
+        }
+        
+        /* 🎯 关键：拖拽悬停效果 */
+        .fc-highlight {
+          background: rgba(59, 130, 246, 0.15) !important;
+          border: 2px dashed rgba(59, 130, 246, 0.6) !important;
+          border-radius: 4px !important;
+        }
+        
+        /* 🎯 关键：拖拽时的视觉反馈 */
+        .fc-timegrid-slot:hover {
+          background: rgba(59, 130, 246, 0.05) !important;
+        }
+        
         /* 彻底禁用所有进度条相关的渲染 */
         .fc-event,
         .fc-event *,
@@ -636,26 +688,6 @@ export default function CalendarView() {
         .fc-event-resizing {
           opacity: 0.9 !important;
           box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
-        }
-        
-        /* 拖拽放置区域样式 */
-        .fc-day-grid,
-        .fc-time-grid,
-        .fc-timegrid-body,
-        .fc-timegrid-slots {
-          position: relative !important;
-        }
-        
-        /* 拖拽悬停效果 */
-        .fc-highlight {
-          background: rgba(59, 130, 246, 0.1) !important;
-          border: 2px dashed rgba(59, 130, 246, 0.5) !important;
-        }
-        
-        /* 确保拖拽区域可以接收拖拽事件 */
-        .fc-timegrid-slot,
-        .fc-timegrid-slot-lane {
-          pointer-events: all !important;
         }
       `}</style>
     </div>
