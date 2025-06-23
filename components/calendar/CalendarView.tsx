@@ -10,6 +10,7 @@ import { TimeBlock } from '@/types';
 import { addMinutes } from 'date-fns';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 export default function CalendarView() {
   const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, convertTaskToTimeBlock, checkTimeConflict } = useStore();
@@ -20,6 +21,7 @@ export default function CalendarView() {
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [lastClickTime, setLastClickTime] = useState<number>(0);
   const [lastClickInfo, setLastClickInfo] = useState<any>(null);
+  const [fireworks, setFireworks] = useState<{ id: string; x: number; y: number }[]>([]);
   const calendarRef = useRef<FullCalendar>(null);
 
   // Handle keyboard events for deletion
@@ -196,6 +198,32 @@ export default function CalendarView() {
     deleteTimeBlock(timeBlockId);
     setContextMenu(null);
     setSelectedTimeBlockId(null);
+  };
+
+  // Function to handle time block completion with fireworks
+  const handleCompleteTimeBlock = (timeBlockId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Get the position for fireworks
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    
+    // Add fireworks effect
+    const fireworkId = `firework-${Date.now()}`;
+    setFireworks(prev => [...prev, { id: fireworkId, x, y }]);
+    
+    // Remove firework after animation
+    setTimeout(() => {
+      setFireworks(prev => prev.filter(f => f.id !== fireworkId));
+    }, 1000);
+    
+    // Delete the time block after a short delay to show the effect
+    setTimeout(() => {
+      deleteTimeBlock(timeBlockId);
+      setSelectedTimeBlockId(null);
+    }, 300);
   };
 
   // 🔥 关键修复：外部拖拽处理
@@ -394,12 +422,10 @@ export default function CalendarView() {
                       }}
                       onClick={(e) => e.stopPropagation()} // Prevent click from bubbling
                       onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from bubbling
-                      className="absolute inset-0 w-full h-full text-sm bg-transparent resize-none text-gray-900 dark:text-gray-100 focus:outline-none border-none p-2 leading-relaxed"
+                      className="absolute inset-0 w-full h-full text-sm resize-none text-gray-900 dark:text-gray-100 focus:outline-none p-2 leading-relaxed bg-transparent border-none"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: '6px',
-                        boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.3)'
+                        background: 'transparent',
+                        boxShadow: 'none'
                       }}
                       autoFocus
                       onFocus={(e) => e.target.select()}
@@ -418,7 +444,7 @@ export default function CalendarView() {
               <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options, Drag edges to resize)`}>
                 <div 
                   className={cn(
-                    "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200",
+                    "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200 relative",
                     isSelected && "ring-2 ring-blue-500 ring-inset"
                   )}
                   onContextMenu={(e) => {
@@ -429,11 +455,20 @@ export default function CalendarView() {
                     });
                   }}
                 >
+                  {/* Complete button */}
+                  <button
+                    className="absolute top-1 right-1 w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                    onClick={(e) => handleCompleteTimeBlock(info.event.id, e)}
+                    title="Mark as complete"
+                  >
+                    <Check size={12} />
+                  </button>
+                  
                   <div className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
                     {info.timeText}
                   </div>
                   <div 
-                    className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight" 
+                    className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight pr-6" 
                     title={shouldTruncate ? info.event.title : undefined}
                   >
                     {displayTitle}
@@ -450,6 +485,7 @@ export default function CalendarView() {
               'cursor-pointer',
               'transition-all duration-200',
               'fc-event-clean', // Custom class for clean rendering
+              'group', // Add group class for hover effects
               isEditing 
                 ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
                 : isSelected
@@ -495,6 +531,31 @@ export default function CalendarView() {
         </div>
       )}
 
+      {/* Fireworks Animation */}
+      {fireworks.map((firework) => (
+        <div
+          key={firework.id}
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: firework.x - 25,
+            top: firework.y - 25,
+          }}
+        >
+          <div className="firework-container">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="firework-particle"
+                style={{
+                  '--angle': `${i * 45}deg`,
+                  animationDelay: `${i * 0.1}s`
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+
       {/* Instructions */}
       <div className="absolute bottom-4 right-4 bg-black/75 text-white text-xs px-3 py-2 rounded-md pointer-events-none">
         <div className="text-yellow-300 font-medium">📋 Instructions:</div>
@@ -504,7 +565,7 @@ export default function CalendarView() {
         <div>Drag center: Move</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
-        <div className="text-green-300 mt-1 font-bold">🎯 Drag tasks from panel!</div>
+        <div className="text-green-300 mt-1 font-bold">✅ Click ✓ to complete!</div>
         <div className="text-yellow-300">⚠️ Overlapping prevented</div>
       </div>
 
@@ -647,7 +708,7 @@ export default function CalendarView() {
           background-image: none !important;
         }
         
-        /* 确保textarea编辑器正常显示 */
+        /* 确保textarea编辑器正常显示 - 移除明显的文本框样式 */
         .editing-area textarea {
           position: absolute !important;
           top: 0 !important;
@@ -655,7 +716,11 @@ export default function CalendarView() {
           width: 100% !important;
           height: 100% !important;
           z-index: 1001 !important;
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%) !important;
+          background: transparent !important;
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+          resize: none !important;
         }
         
         /* 完全禁用FullCalendar的进度渲染系统 */
@@ -688,6 +753,41 @@ export default function CalendarView() {
         .fc-event-resizing {
           opacity: 0.9 !important;
           box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        /* 烟花动画 */
+        .firework-container {
+          position: relative;
+          width: 50px;
+          height: 50px;
+        }
+
+        .firework-particle {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 4px;
+          height: 4px;
+          background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd);
+          border-radius: 50%;
+          animation: firework-explode 0.8s ease-out forwards;
+          transform-origin: center;
+        }
+
+        @keyframes firework-explode {
+          0% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-30px) scale(0);
+            opacity: 0;
+          }
+        }
+
+        /* 完成按钮样式 */
+        .fc-event:hover .group-hover\:opacity-100 {
+          opacity: 1 !important;
         }
       `}</style>
     </div>
