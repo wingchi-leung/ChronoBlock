@@ -5,7 +5,6 @@ import { useStore } from '@/lib/store';
 import Header from '@/components/Header';
 import CalendarView from '@/components/calendar/CalendarView';
 import DailyView from '@/components/daily/DailyView';
-import TaskPanel from '@/components/tasks/TaskPanel';
 
 export default function Home() {
   const { currentView } = useStore();
@@ -24,16 +23,12 @@ export default function Home() {
     <main className="flex flex-col h-screen overflow-hidden">
       <Header />
       
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-hidden">
-          {currentView === 'calendar' ? (
-            <CalendarView />
-          ) : (
-            <DailyView />
-          )}
-        </div>
-        
-        <TaskPanel />
+      <div className="flex-1 overflow-hidden">
+        {currentView === 'calendar' ? (
+          <CalendarView />
+        ) : (
+          <DailyView />
+        )}
       </div>
     </main>
   );
