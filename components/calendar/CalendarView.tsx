@@ -10,10 +10,10 @@ import { TimeBlock } from '@/types';
 import { addMinutes } from 'date-fns';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, CheckCircle2, RotateCcw } from 'lucide-react';
 
 export default function CalendarView() {
-  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, convertTaskToTimeBlock, checkTimeConflict } = useStore();
+  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, toggleTimeBlockCompletion, convertTaskToTimeBlock, checkTimeConflict } = useStore();
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [selectedTimeBlockId, setSelectedTimeBlockId] = useState<string | null>(null);
@@ -205,25 +205,29 @@ export default function CalendarView() {
     event.preventDefault();
     event.stopPropagation();
     
-    // Get the position for fireworks
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
+    const timeBlock = timeBlocks.find(block => block.id === timeBlockId);
+    if (!timeBlock) return;
     
-    // Add fireworks effect
-    const fireworkId = `firework-${Date.now()}`;
-    setFireworks(prev => [...prev, { id: fireworkId, x, y }]);
+    // 如果是标记为完成，显示烟花效果
+    if (!timeBlock.completed) {
+      // Get the position for fireworks
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      // Add fireworks effect
+      const fireworkId = `firework-${Date.now()}`;
+      setFireworks(prev => [...prev, { id: fireworkId, x, y }]);
+      
+      // Remove firework after animation
+      setTimeout(() => {
+        setFireworks(prev => prev.filter(f => f.id !== fireworkId));
+      }, 1000);
+    }
     
-    // Remove firework after animation
-    setTimeout(() => {
-      setFireworks(prev => prev.filter(f => f.id !== fireworkId));
-    }, 1000);
-    
-    // Delete the time block after a short delay to show the effect
-    setTimeout(() => {
-      deleteTimeBlock(timeBlockId);
-      setSelectedTimeBlockId(null);
-    }, 300);
+    // 切换完成状态而不是删除
+    toggleTimeBlockCompletion(timeBlockId);
+    setSelectedTimeBlockId(null);
   };
 
   // 🔥 关键修复：外部拖拽处理
@@ -392,6 +396,8 @@ export default function CalendarView() {
           eventContent={(info) => {
             const isEditing = inlineEditingId === info.event.id;
             const isSelected = selectedTimeBlockId === info.event.id;
+            const timeBlock = timeBlocks.find(block => block.id === info.event.id);
+            const isCompleted = timeBlock?.completed || false;
             
             if (isEditing) {
               return (
@@ -444,8 +450,9 @@ export default function CalendarView() {
               <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options, Drag edges to resize)`}>
                 <div 
                   className={cn(
-                    "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200 relative",
-                    isSelected && "ring-2 ring-blue-500 ring-inset"
+                    "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200 relative group",
+                    isSelected && "ring-2 ring-blue-500 ring-inset",
+                    isCompleted && "opacity-75"
                   )}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -455,24 +462,56 @@ export default function CalendarView() {
                     });
                   }}
                 >
-                  {/* Complete button */}
-                  <button
-                    className="absolute top-1 right-1 w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-                    onClick={(e) => handleCompleteTimeBlock(info.event.id, e)}
-                    title="Mark as complete"
-                  >
-                    <Check size={12} />
-                  </button>
+                  {/* 完成状态覆盖层 */}
+                  {isCompleted && (
+                    <div className="absolute inset-0 bg-green-500/20 dark:bg-green-400/20 rounded-sm flex items-center justify-center">
+                      <CheckCircle2 size={24} className="text-green-600 dark:text-green-400 opacity-60" />
+                    </div>
+                  )}
                   
-                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
+                  {/* 完成/取消完成按钮 - 更大更明显 */}
+                  <div className="absolute top-1 right-1 flex gap-1">
+                    <button
+                      className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-20 shadow-md border-2",
+                        isCompleted 
+                          ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-400 opacity-90 hover:opacity-100" 
+                          : "bg-green-500 hover:bg-green-600 text-white border-green-400 opacity-90 hover:opacity-100",
+                        "group-hover:scale-110 hover:shadow-lg"
+                      )}
+                      onClick={(e) => handleCompleteTimeBlock(info.event.id, e)}
+                      title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
+                    >
+                      {isCompleted ? <RotateCcw size={14} /> : <Check size={14} />}
+                    </button>
+                  </div>
+                  
+                  <div className={cn(
+                    "text-xs font-medium mb-1",
+                    isCompleted 
+                      ? "text-gray-500 dark:text-gray-400 line-through" 
+                      : "text-gray-900 dark:text-gray-100"
+                  )}>
                     {info.timeText}
                   </div>
                   <div 
-                    className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight pr-6" 
+                    className={cn(
+                      "text-sm font-medium leading-tight pr-8",
+                      isCompleted 
+                        ? "text-gray-500 dark:text-gray-400 line-through" 
+                        : "text-gray-900 dark:text-gray-100"
+                    )}
                     title={shouldTruncate ? info.event.title : undefined}
                   >
                     {displayTitle}
                   </div>
+                  
+                  {/* 完成标记 */}
+                  {isCompleted && (
+                    <div className="absolute bottom-1 left-2 text-xs text-green-600 dark:text-green-400 font-medium">
+                      ✓ Completed
+                    </div>
+                  )}
                 </div>
               </Tooltip>
             );
@@ -480,6 +519,9 @@ export default function CalendarView() {
           eventClassNames={(info) => {
             const isEditing = inlineEditingId === info.event.id;
             const isSelected = selectedTimeBlockId === info.event.id;
+            const timeBlock = timeBlocks.find(block => block.id === info.event.id);
+            const isCompleted = timeBlock?.completed || false;
+            
             return [
               'border-2 border-gray-800 dark:border-gray-200',
               'cursor-pointer',
@@ -491,8 +533,10 @@ export default function CalendarView() {
                 : isSelected
                 ? 'ring-2 ring-blue-400 shadow-md'
                 : 'hover:shadow-md hover:transform hover:scale-[1.01]',
-              // Enhanced background with gradient
-              isEditing
+              // Enhanced background with gradient and completion state
+              isCompleted
+                ? 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
+                : isEditing
                 ? 'bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30'
                 : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-800'
             ];
@@ -566,6 +610,7 @@ export default function CalendarView() {
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
         <div className="text-green-300 mt-1 font-bold">✅ Click ✓ to complete!</div>
+        <div className="text-orange-300 font-bold">🔄 Click ↻ to undo!</div>
         <div className="text-yellow-300">⚠️ Overlapping prevented</div>
       </div>
 
@@ -785,9 +830,34 @@ export default function CalendarView() {
           }
         }
 
-        /* 完成按钮样式 */
-        .fc-event:hover .group-hover\:opacity-100 {
-          opacity: 1 !important;
+        /* 完成按钮增强样式 */
+        .fc-event .group:hover button {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 完成状态的时间块样式增强 */
+        .fc-event.completed-timeblock {
+          position: relative;
+          overflow: visible;
+        }
+        
+        .fc-event.completed-timeblock::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(34, 197, 94, 0.1) 10px,
+            rgba(34, 197, 94, 0.1) 20px
+          );
+          pointer-events: none;
+          border-radius: inherit;
         }
       `}</style>
     </div>
