@@ -10,7 +10,7 @@ import { TimeBlock } from '@/types';
 import { addMinutes } from 'date-fns';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Check, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Check, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
 
 export default function CalendarView() {
   const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, toggleTimeBlockCompletion, convertTaskToTimeBlock, checkTimeConflict } = useStore();
@@ -450,9 +450,9 @@ export default function CalendarView() {
               <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options, Drag edges to resize)`}>
                 <div 
                   className={cn(
-                    "h-full w-full p-2 overflow-hidden cursor-pointer transition-all duration-200 relative group",
+                    "h-full w-full p-3 overflow-hidden cursor-pointer transition-all duration-300 relative group",
                     isSelected && "ring-2 ring-blue-500 ring-inset",
-                    isCompleted && "opacity-75"
+                    isCompleted && "transform scale-[0.98]"
                   )}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -462,43 +462,85 @@ export default function CalendarView() {
                     });
                   }}
                 >
-                  {/* 完成状态覆盖层 */}
+                  {/* 🎨 美观的完成状态覆盖层 */}
                   {isCompleted && (
-                    <div className="absolute inset-0 bg-green-500/20 dark:bg-green-400/20 rounded-sm flex items-center justify-center">
-                      <CheckCircle2 size={24} className="text-green-600 dark:text-green-400 opacity-60" />
-                    </div>
+                    <>
+                      {/* 渐变覆盖层 */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/80 via-green-50/60 to-teal-100/80 dark:from-emerald-900/40 dark:via-green-800/30 dark:to-teal-900/40 rounded-sm backdrop-blur-[1px]" />
+                      
+                      {/* 完成图标 - 更精美的设计 */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          {/* 光晕效果 */}
+                          <div className="absolute inset-0 bg-emerald-400/30 dark:bg-emerald-300/20 rounded-full blur-md scale-150 animate-pulse" />
+                          {/* 主图标 */}
+                          <div className="relative bg-gradient-to-br from-emerald-400 to-green-500 dark:from-emerald-300 dark:to-green-400 rounded-full p-2 shadow-lg">
+                            <CheckCircle2 size={20} className="text-white drop-shadow-sm" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 装饰性星星 */}
+                      <div className="absolute top-2 left-2">
+                        <Sparkles size={12} className="text-emerald-400 dark:text-emerald-300 opacity-60 animate-pulse" />
+                      </div>
+                      <div className="absolute bottom-2 right-8">
+                        <Sparkles size={10} className="text-green-400 dark:text-green-300 opacity-40 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                      </div>
+                    </>
                   )}
                   
-                  {/* 完成/取消完成按钮 - 更大更明显 */}
-                  <div className="absolute top-1 right-1 flex gap-1">
+                  {/* 🎨 精美的完成/取消完成按钮 */}
+                  <div className="absolute -top-2 -right-2 z-20">
                     <button
                       className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-20 shadow-md border-2",
+                        "relative w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 transform",
+                        "shadow-lg border-2 backdrop-blur-sm",
                         isCompleted 
-                          ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-400 opacity-90 hover:opacity-100" 
-                          : "bg-green-500 hover:bg-green-600 text-white border-green-400 opacity-90 hover:opacity-100",
-                        "group-hover:scale-110 hover:shadow-lg"
+                          ? "bg-gradient-to-br from-amber-400 to-orange-500 border-amber-300 hover:from-amber-500 hover:to-orange-600 text-white" 
+                          : "bg-gradient-to-br from-emerald-400 to-green-500 border-emerald-300 hover:from-emerald-500 hover:to-green-600 text-white",
+                        "hover:scale-110 hover:shadow-xl hover:-translate-y-0.5",
+                        "group-hover:opacity-100 opacity-80",
+                        "before:absolute before:inset-0 before:rounded-full before:bg-white/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity"
                       )}
                       onClick={(e) => handleCompleteTimeBlock(info.event.id, e)}
                       title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
                     >
-                      {isCompleted ? <RotateCcw size={14} /> : <Check size={14} />}
+                      {/* 按钮内容 */}
+                      <div className="relative z-10">
+                        {isCompleted ? (
+                          <RotateCcw size={14} className="drop-shadow-sm" />
+                        ) : (
+                          <Check size={14} className="drop-shadow-sm" />
+                        )}
+                      </div>
+                      
+                      {/* 光晕效果 */}
+                      <div className={cn(
+                        "absolute inset-0 rounded-full blur-sm opacity-50 transition-opacity",
+                        isCompleted 
+                          ? "bg-gradient-to-br from-amber-400 to-orange-500" 
+                          : "bg-gradient-to-br from-emerald-400 to-green-500"
+                      )} />
                     </button>
                   </div>
                   
+                  {/* 时间显示 */}
                   <div className={cn(
-                    "text-xs font-medium mb-1",
+                    "text-xs font-medium mb-1 relative z-10",
                     isCompleted 
-                      ? "text-gray-500 dark:text-gray-400 line-through" 
+                      ? "text-gray-600 dark:text-gray-300 line-through opacity-75" 
                       : "text-gray-900 dark:text-gray-100"
                   )}>
                     {info.timeText}
                   </div>
+                  
+                  {/* 标题显示 */}
                   <div 
                     className={cn(
-                      "text-sm font-medium leading-tight pr-8",
+                      "text-sm font-medium leading-tight pr-4 relative z-10",
                       isCompleted 
-                        ? "text-gray-500 dark:text-gray-400 line-through" 
+                        ? "text-gray-600 dark:text-gray-300 line-through opacity-75" 
                         : "text-gray-900 dark:text-gray-100"
                     )}
                     title={shouldTruncate ? info.event.title : undefined}
@@ -506,10 +548,11 @@ export default function CalendarView() {
                     {displayTitle}
                   </div>
                   
-                  {/* 完成标记 */}
+                  {/* 🎨 精美的完成标记 */}
                   {isCompleted && (
-                    <div className="absolute bottom-1 left-2 text-xs text-green-600 dark:text-green-400 font-medium">
-                      ✓ Completed
+                    <div className="absolute bottom-1 left-2 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 relative z-10">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="drop-shadow-sm">Completed</span>
                     </div>
                   )}
                 </div>
@@ -525,20 +568,21 @@ export default function CalendarView() {
             return [
               'border-2 border-gray-800 dark:border-gray-200',
               'cursor-pointer',
-              'transition-all duration-200',
+              'transition-all duration-300',
               'fc-event-clean', // Custom class for clean rendering
               'group', // Add group class for hover effects
+              'overflow-visible', // Allow buttons to show outside
               isEditing 
                 ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
                 : isSelected
                 ? 'ring-2 ring-blue-400 shadow-md'
-                : 'hover:shadow-md hover:transform hover:scale-[1.01]',
-              // Enhanced background with gradient and completion state
+                : 'hover:shadow-lg hover:transform hover:scale-[1.01]',
+              // 🎨 Enhanced background with beautiful gradients
               isCompleted
-                ? 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
+                ? 'bg-gradient-to-br from-emerald-50/90 via-green-50/80 to-teal-50/90 dark:from-emerald-900/30 dark:via-green-800/25 dark:to-teal-900/30 border-emerald-300 dark:border-emerald-600'
                 : isEditing
                 ? 'bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30'
-                : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-800'
+                : 'bg-gradient-to-br from-white via-gray-50 to-slate-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 hover:from-gray-50 hover:via-slate-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:via-gray-750 dark:hover:to-gray-800'
             ];
           }}
         />
@@ -575,24 +619,25 @@ export default function CalendarView() {
         </div>
       )}
 
-      {/* Fireworks Animation */}
+      {/* 🎆 Enhanced Fireworks Animation */}
       {fireworks.map((firework) => (
         <div
           key={firework.id}
           className="fixed pointer-events-none z-50"
           style={{
-            left: firework.x - 25,
-            top: firework.y - 25,
+            left: firework.x - 30,
+            top: firework.y - 30,
           }}
         >
           <div className="firework-container">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(12)].map((_, i) => (
               <div
                 key={i}
                 className="firework-particle"
                 style={{
-                  '--angle': `${i * 45}deg`,
-                  animationDelay: `${i * 0.1}s`
+                  '--angle': `${i * 30}deg`,
+                  '--delay': `${i * 0.05}s`,
+                  '--color': `hsl(${120 + i * 20}, 70%, 60%)`
                 } as React.CSSProperties}
               />
             ))}
@@ -601,20 +646,20 @@ export default function CalendarView() {
       ))}
 
       {/* Instructions */}
-      <div className="absolute bottom-4 right-4 bg-black/75 text-white text-xs px-3 py-2 rounded-md pointer-events-none">
-        <div className="text-yellow-300 font-medium">📋 Instructions:</div>
+      <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs px-3 py-2 rounded-lg backdrop-blur-sm pointer-events-none">
+        <div className="text-emerald-300 font-medium">📋 Instructions:</div>
         <div>Double-click: Create time block</div>
         <div>Double-click block: Edit</div>
         <div>Drag edges: Resize</div>
         <div>Drag center: Move</div>
         <div>Right-click: Delete</div>
         <div>Del key: Delete selected</div>
-        <div className="text-green-300 mt-1 font-bold">✅ Click ✓ to complete!</div>
-        <div className="text-orange-300 font-bold">🔄 Click ↻ to undo!</div>
+        <div className="text-emerald-300 mt-1 font-bold">✨ Click ✓ to complete!</div>
+        <div className="text-amber-300 font-bold">🔄 Click ↻ to undo!</div>
         <div className="text-yellow-300">⚠️ Overlapping prevented</div>
       </div>
 
-      {/* 🔥 完全移除进度条并启用拖拽的CSS */}
+      {/* 🎨 Enhanced CSS Styles */}
       <style jsx global>{`
         /* 🎯 关键：启用拖拽放置区域 */
         .fc-timegrid-body,
@@ -800,23 +845,25 @@ export default function CalendarView() {
           box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
         }
 
-        /* 烟花动画 */
+        /* 🎆 Enhanced Fireworks Animation */
         .firework-container {
           position: relative;
-          width: 50px;
-          height: 50px;
+          width: 60px;
+          height: 60px;
         }
 
         .firework-particle {
           position: absolute;
           top: 50%;
           left: 50%;
-          width: 4px;
-          height: 4px;
-          background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd);
+          width: 6px;
+          height: 6px;
+          background: var(--color, linear-gradient(45deg, #10b981, #34d399, #6ee7b7));
           border-radius: 50%;
-          animation: firework-explode 0.8s ease-out forwards;
+          animation: firework-explode 1.2s ease-out forwards;
           transform-origin: center;
+          box-shadow: 0 0 6px var(--color, #10b981);
+          animation-delay: var(--delay, 0s);
         }
 
         @keyframes firework-explode {
@@ -824,40 +871,46 @@ export default function CalendarView() {
             transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(1);
             opacity: 1;
           }
+          70% {
+            opacity: 0.8;
+          }
           100% {
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-30px) scale(0);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-40px) scale(0.3);
             opacity: 0;
           }
         }
 
-        /* 完成按钮增强样式 */
-        .fc-event .group:hover button {
-          transform: scale(1.1);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        /* 🎨 Beautiful button hover effects */
+        .fc-event button {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
         
-        /* 完成状态的时间块样式增强 */
+        .fc-event button:hover {
+          transform: scale(1.1) translateY(-1px) !important;
+          filter: brightness(1.1) !important;
+        }
+        
+        /* 🎨 Completed time block special effects */
         .fc-event.completed-timeblock {
           position: relative;
           overflow: visible;
         }
         
-        .fc-event.completed-timeblock::after {
+        /* 🎨 Subtle pattern overlay for completed blocks */
+        .fc-event.completed-timeblock::before {
           content: '';
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 10px,
-            rgba(34, 197, 94, 0.1) 10px,
-            rgba(34, 197, 94, 0.1) 20px
-          );
+          background-image: 
+            radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.1) 2px, transparent 2px),
+            radial-gradient(circle at 80% 80%, rgba(52, 211, 153, 0.1) 2px, transparent 2px);
+          background-size: 20px 20px;
           pointer-events: none;
           border-radius: inherit;
+          opacity: 0.6;
         }
       `}</style>
     </div>
