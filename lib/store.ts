@@ -15,6 +15,7 @@ interface State {
   addTimeBlock: (start: Date, end?: Date, title?: string) => TimeBlock | null;
   updateTimeBlock: (id: string, updates: Partial<TimeBlock>) => boolean;
   deleteTimeBlock: (id: string) => void;
+  toggleTimeBlockCompletion: (id: string) => void; // 新增时间块完成切换
   convertTaskToTimeBlock: (taskId: string, start: Date) => boolean;
   setCurrentView: (view: View) => void;
   checkTimeConflict: (start: Date, end: Date, excludeId?: string) => boolean;
@@ -81,7 +82,8 @@ export const useStore = create<State>()(
           title,
           start,
           end: endTime,
-          editable: true
+          editable: true,
+          completed: false // 默认未完成
         };
         
         set((state) => ({
@@ -119,6 +121,13 @@ export const useStore = create<State>()(
         timeBlocks: state.timeBlocks.filter(block => block.id !== id)
       })),
       
+      // 新增：切换时间块完成状态
+      toggleTimeBlockCompletion: (id) => set((state) => ({
+        timeBlocks: state.timeBlocks.map(block => 
+          block.id === id ? { ...block, completed: !block.completed } : block
+        )
+      })),
+      
       convertTaskToTimeBlock: (taskId, start) => {
         const { tasks, checkTimeConflict } = get();
         const task = tasks.find(t => t.id === taskId);
@@ -138,7 +147,8 @@ export const useStore = create<State>()(
           start,
           end,
           color: task.color,
-          editable: true
+          editable: true,
+          completed: false // 默认未完成
         };
         
         set((state) => ({

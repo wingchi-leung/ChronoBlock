@@ -6,6 +6,7 @@ export interface TimeBlock {
   allDay?: boolean;
   color?: string;
   editable?: boolean;
+  completed?: boolean; // 新增完成状态
 }
 
 export interface Task {
