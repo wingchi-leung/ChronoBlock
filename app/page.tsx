@@ -40,12 +40,12 @@ export default function Home() {
     return (
       <>
         <div className="min-h-screen bg-background relative overflow-hidden">
-          {/* 背景装饰元素 */}
+          {/* 背景装饰元素 - 使用断续线条 */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-10 w-32 h-32 border-2 border-current opacity-10 animate-float"></div>
-            <div className="absolute top-40 right-20 w-24 h-24 border-dashed border-2 border-current opacity-10 animate-float" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute bottom-40 left-1/4 w-16 h-16 border-2 border-current opacity-10 animate-float" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute bottom-20 right-1/3 w-20 h-20 border-dashed border-2 border-current opacity-10 animate-float" style={{ animationDelay: '0.5s' }}></div>
+            <div className="absolute top-20 left-10 w-32 h-32 border-2 border-dashed border-current opacity-10 animate-float rounded-xl"></div>
+            <div className="absolute top-40 right-20 w-24 h-24 border-dotted border-2 border-current opacity-10 animate-float rounded-lg" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute bottom-40 left-1/4 w-16 h-16 border-2 border-dashed border-current opacity-10 animate-float rounded-full" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute bottom-20 right-1/3 w-20 h-20 border-dotted border-2 border-current opacity-10 animate-float rounded-2xl" style={{ animationDelay: '0.5s' }}></div>
           </div>
           
           <Header />
@@ -58,9 +58,9 @@ export default function Home() {
                   {/* 动态装饰元素 */}
                   <div className="flex justify-center mb-12">
                     <div className="relative">
-                      <div className="w-24 h-24 border-3 border-current animate-float magnetic">
-                        <div className="w-full h-full border-2 border-dashed border-current opacity-50 transform rotate-3 animate-pulse-enhanced"></div>
-                        <div className="absolute inset-0 border border-dotted border-current opacity-30 transform -rotate-3"></div>
+                      <div className="w-24 h-24 border-3 border-dashed border-current animate-float magnetic rounded-2xl">
+                        <div className="w-full h-full border-2 border-dotted border-current opacity-50 transform rotate-3 animate-pulse-enhanced rounded-xl"></div>
+                        <div className="absolute inset-0 border border-dashed border-current opacity-30 transform -rotate-3 rounded-lg"></div>
                       </div>
                       <Sparkles className="absolute -top-3 -right-3 w-8 h-8 text-accent animate-pulse-enhanced" />
                       <Star className="absolute -bottom-2 -left-2 w-6 h-6 text-accent animate-float" style={{ animationDelay: '1s' }} />
@@ -69,7 +69,7 @@ export default function Home() {
                   
                   <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-none">
                     <span className="block text-foreground glitch-text" data-text="Master">Master</span>
-                    <span className="block text-gradient-dynamic font-mono transform -rotate-1 magnetic">Your Time</span>
+                    <span className="block text-accent font-mono transform -rotate-1 magnetic">Your Time</span>
                   </h1>
                   
                   <div className="max-w-4xl mx-auto">
@@ -106,10 +106,10 @@ export default function Home() {
               {/* Features Grid */}
               <div className="grid md:grid-cols-3 gap-8 lg:gap-12 mb-24">
                 <div className="card-sketch card-3d p-8 group magnetic">
-                  <div className="icon-sketch w-20 h-20 mb-8 flex items-center justify-center border-3 border-current">
+                  <div className="icon-sketch w-20 h-20 mb-8 flex items-center justify-center border-3 border-dashed border-current rounded-2xl">
                     <Calendar className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-gradient-dynamic">Visual Time Blocks</h3>
+                  <h3 className="text-2xl font-bold mb-4 text-accent">Visual Time Blocks</h3>
                   <p className="text-muted-foreground leading-relaxed mb-6">
                     Drag, drop, and resize time blocks with an intuitive interface that makes scheduling feel like magic.
                   </p>
@@ -117,10 +117,10 @@ export default function Home() {
                 </div>
 
                 <div className="card-sketch card-3d p-8 group magnetic" style={{ animationDelay: '0.2s' }}>
-                  <div className="icon-sketch w-20 h-20 mb-8 flex items-center justify-center border-3 border-current">
+                  <div className="icon-sketch w-20 h-20 mb-8 flex items-center justify-center border-3 border-dotted border-current rounded-2xl">
                     <Clock className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-gradient-dynamic">Smart Scheduling</h3>
+                  <h3 className="text-2xl font-bold mb-4 text-accent">Smart Scheduling</h3>
                   <p className="text-muted-foreground leading-relaxed mb-6">
                     AI-powered conflict detection and intelligent suggestions keep your schedule optimized and stress-free.
                   </p>
@@ -128,10 +128,10 @@ export default function Home() {
                 </div>
 
                 <div className="card-sketch card-3d p-8 group magnetic" style={{ animationDelay: '0.4s' }}>
-                  <div className="icon-sketch w-20 h-20 mb-8 flex items-center justify-center border-3 border-current">
+                  <div className="icon-sketch w-20 h-20 mb-8 flex items-center justify-center border-3 border-dashed border-current rounded-2xl">
                     <CheckCircle2 className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-gradient-dynamic">Progress Tracking</h3>
+                  <h3 className="text-2xl font-bold mb-4 text-accent">Progress Tracking</h3>
                   <p className="text-muted-foreground leading-relaxed mb-6">
                     Mark tasks complete with satisfying animations and track your productivity with beautiful insights.
                   </p>
@@ -143,22 +143,22 @@ export default function Home() {
               <div className="border-sketch p-10 lg:p-16 mb-24 magnetic card-3d">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
                   <div className="text-center group">
-                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-gradient-dynamic">10K+</div>
+                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-accent">10K+</div>
                     <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Time Blocks Created</div>
                     <div className="w-12 h-1 bg-accent mx-auto mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
                   </div>
                   <div className="text-center group">
-                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-gradient-dynamic">95%</div>
+                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-accent">95%</div>
                     <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Productivity Increase</div>
                     <div className="w-12 h-1 bg-accent mx-auto mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
                   </div>
                   <div className="text-center group">
-                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-gradient-dynamic">2.5K</div>
+                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-accent">2.5K</div>
                     <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Active Users</div>
                     <div className="w-12 h-1 bg-accent mx-auto mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
                   </div>
                   <div className="text-center group">
-                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-gradient-dynamic">24/7</div>
+                    <div className="text-4xl lg:text-6xl font-bold font-mono mb-3 text-accent">24/7</div>
                     <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Always Available</div>
                     <div className="w-12 h-1 bg-accent mx-auto mt-3 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
                   </div>
@@ -167,40 +167,40 @@ export default function Home() {
 
               {/* How it Works */}
               <div className="text-center space-y-16 mb-24">
-                <h2 className="text-4xl lg:text-6xl font-bold text-gradient-dynamic">How It Works</h2>
+                <h2 className="text-4xl lg:text-6xl font-bold text-accent">How It Works</h2>
                 
                 <div className="grid md:grid-cols-3 gap-12 lg:gap-16">
                   <div className="space-y-6 group magnetic">
-                    <div className="w-16 h-16 border-3 border-current flex items-center justify-center font-bold text-2xl mx-auto magnetic-button">
+                    <div className="w-16 h-16 border-3 border-dashed border-current flex items-center justify-center font-bold text-2xl mx-auto magnetic-button rounded-2xl">
                       1
                     </div>
                     <h3 className="text-xl font-bold text-accent">Create Time Blocks</h3>
                     <p className="text-muted-foreground">
                       Double-click on your calendar to create time blocks for any activity. Watch them come to life with smooth animations.
                     </p>
-                    <div className="w-8 h-8 border-2 border-dashed border-current mx-auto opacity-30 animate-float"></div>
+                    <div className="w-8 h-8 border-2 border-dotted border-current mx-auto opacity-30 animate-float rounded-lg"></div>
                   </div>
                   
                   <div className="space-y-6 group magnetic" style={{ animationDelay: '0.2s' }}>
-                    <div className="w-16 h-16 border-3 border-current flex items-center justify-center font-bold text-2xl mx-auto magnetic-button">
+                    <div className="w-16 h-16 border-3 border-dotted border-current flex items-center justify-center font-bold text-2xl mx-auto magnetic-button rounded-2xl">
                       2
                     </div>
                     <h3 className="text-xl font-bold text-accent">Organize & Schedule</h3>
                     <p className="text-muted-foreground">
                       Drag tasks from your list directly onto the calendar. Smart conflict detection prevents overlaps automatically.
                     </p>
-                    <div className="w-8 h-8 border-2 border-dashed border-current mx-auto opacity-30 animate-float"></div>
+                    <div className="w-8 h-8 border-2 border-dashed border-current mx-auto opacity-30 animate-float rounded-lg"></div>
                   </div>
                   
                   <div className="space-y-6 group magnetic" style={{ animationDelay: '0.4s' }}>
-                    <div className="w-16 h-16 border-3 border-current flex items-center justify-center font-bold text-2xl mx-auto magnetic-button">
+                    <div className="w-16 h-16 border-3 border-dashed border-current flex items-center justify-center font-bold text-2xl mx-auto magnetic-button rounded-2xl">
                       3
                     </div>
                     <h3 className="text-xl font-bold text-accent">Track Progress</h3>
                     <p className="text-muted-foreground">
                       Mark tasks complete and celebrate with fireworks! Watch your productivity soar with visual feedback.
                     </p>
-                    <div className="w-8 h-8 border-2 border-dashed border-current mx-auto opacity-30 animate-float"></div>
+                    <div className="w-8 h-8 border-2 border-dotted border-current mx-auto opacity-30 animate-float rounded-lg"></div>
                   </div>
                 </div>
               </div>
@@ -256,8 +256,8 @@ export default function Home() {
             <div className="container-custom">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 border-2 border-current flex items-center justify-center">
-                    <div className="w-4 h-4 border border-dashed border-current transform rotate-12"></div>
+                  <div className="w-8 h-8 border-2 border-dashed border-current flex items-center justify-center rounded-lg">
+                    <div className="w-4 h-4 border border-dotted border-current transform rotate-12 rounded-sm"></div>
                   </div>
                   <span className="font-bold font-mono text-xl">ChronoBlock</span>
                   <span className="text-muted-foreground">© 2024</span>

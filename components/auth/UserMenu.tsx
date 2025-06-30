@@ -32,7 +32,7 @@ export default function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-12 w-12 p-0 magnetic">
-          <div className="w-12 h-12 border-3 border-current flex items-center justify-center font-bold text-lg hover:bg-muted transition-all duration-300 relative overflow-hidden">
+          <div className="avatar-circular w-12 h-12 flex items-center justify-center font-bold text-lg hover:bg-muted transition-all duration-300 relative overflow-hidden">
             {userInitials}
             <div className="absolute inset-0 shimmer opacity-0 hover:opacity-100 transition-opacity"></div>
           </div>

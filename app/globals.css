@@ -46,10 +46,8 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
     
-    /* 动态设计颜色变量 */
-    --accent-color: 45 100% 51%; /* 亮黄色 */
-    --accent-secondary: 280 100% 70%; /* 紫色 */
-    --accent-tertiary: 195 100% 50%; /* 青色 */
+    /* 简化的颜色变量 - 移除渐变色系统 */
+    --accent-color: 0 0% 20%; /* 深灰色 */
     --success-color: 142 76% 36%;
     --warning-color: 38 92% 50%;
     --sketch-primary: 0 0% 15%;
@@ -87,6 +85,7 @@
     --chart-5: 340 75% 55%;
     
     --sketch-primary: 0 0% 85%;
+    --accent-color: 0 0% 80%; /* 浅灰色 */
   }
 }
 
@@ -118,10 +117,9 @@
 @layer components {
   /* 🎨 动态手绘风格按钮 */
   .btn-sketch {
-    @apply relative overflow-hidden;
+    @apply relative overflow-hidden rounded-lg;
     background: transparent;
-    border: 3px solid currentColor;
-    border-radius: 0;
+    border: 2px solid currentColor;
     position: relative;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transform-style: preserve-3d;
@@ -135,7 +133,7 @@
     right: 0;
     bottom: 0;
     background: currentColor;
-    transform: scaleX(0) skewY(-2deg);
+    transform: scaleX(0) skewY(-1deg);
     transform-origin: left;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: -1;
@@ -144,14 +142,15 @@
   .btn-sketch::after {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
     border: 1px dashed currentColor;
     opacity: 0;
     transition: opacity 0.3s ease;
-    transform: rotate(1deg);
+    transform: rotate(0.5deg);
+    border-radius: inherit;
   }
   
   .btn-sketch:hover::before {
@@ -164,22 +163,21 @@
   
   .btn-sketch:hover {
     color: white;
-    transform: translateY(-4px) rotate(-1deg);
+    transform: translateY(-2px) rotate(-0.5deg);
     box-shadow: 
-      6px 6px 0 rgba(0, 0, 0, 0.1),
-      12px 12px 20px rgba(0, 0, 0, 0.1);
+      4px 4px 0 rgba(0, 0, 0, 0.1),
+      8px 8px 15px rgba(0, 0, 0, 0.1);
   }
   
   .btn-sketch:active {
-    transform: translateY(-2px) rotate(0deg);
-    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px) rotate(0deg);
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
   }
   
   /* 🎨 动态卡片设计 */
   .card-sketch {
-    @apply bg-white dark:bg-gray-900;
-    border: 3px solid currentColor;
-    border-radius: 0;
+    @apply bg-white dark:bg-gray-900 rounded-xl;
+    border: 2px solid currentColor;
     position: relative;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transform-style: preserve-3d;
@@ -188,55 +186,48 @@
   .card-sketch::before {
     content: '';
     position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    background: linear-gradient(
-      45deg,
-      hsl(var(--accent-color)) 0%,
-      hsl(var(--accent-secondary)) 50%,
-      hsl(var(--accent-tertiary)) 100%
-    );
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: hsl(var(--accent-color));
     z-index: -1;
-    transform: rotate(0.5deg) scale(0.98);
+    transform: rotate(0.3deg) scale(0.98);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border-radius: 0;
+    border-radius: inherit;
   }
   
   .card-sketch::after {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    background: radial-gradient(circle, hsl(var(--accent-color)) 0%, transparent 70%);
-    transform: translate(-50%, -50%) scale(0);
-    transition: transform 0.3s ease;
-    z-index: -1;
-    opacity: 0.3;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    border: 1px dashed currentColor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
   }
   
   .card-sketch:hover {
-    transform: translateY(-8px) rotate(-1deg) scale(1.02);
+    transform: translateY(-4px) rotate(-0.5deg) scale(1.01);
     box-shadow: 
-      8px 8px 0 rgba(0, 0, 0, 0.1),
-      16px 16px 30px rgba(0, 0, 0, 0.15);
+      6px 6px 0 rgba(0, 0, 0, 0.1),
+      12px 12px 20px rgba(0, 0, 0, 0.15);
   }
   
   .card-sketch:hover::before {
-    transform: rotate(2deg) scale(1.05);
+    transform: rotate(1deg) scale(1.02);
   }
   
   .card-sketch:hover::after {
-    transform: translate(-50%, -50%) scale(20);
+    opacity: 0.4;
   }
   
   /* 🎨 动态输入框 */
   .input-sketch {
-    @apply border-3 border-black dark:border-white bg-transparent;
-    border-radius: 0;
+    @apply border-2 border-black dark:border-white bg-transparent rounded-lg;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
   }
@@ -244,37 +235,38 @@
   .input-sketch::before {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border: 2px dashed hsl(var(--accent-color));
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border: 1px dashed hsl(var(--accent-color));
     opacity: 0;
     transition: opacity 0.3s ease;
-    transform: rotate(-1deg);
+    transform: rotate(-0.5deg);
+    border-radius: inherit;
   }
   
   .input-sketch:focus {
     @apply outline-none;
     box-shadow: 
-      6px 6px 0 hsl(var(--accent-color)),
-      12px 12px 20px rgba(0, 0, 0, 0.1);
-    transform: translateX(-3px) translateY(-3px) rotate(1deg);
+      4px 4px 0 hsl(var(--accent-color)),
+      8px 8px 15px rgba(0, 0, 0, 0.1);
+    transform: translateX(-2px) translateY(-2px) rotate(0.5deg);
   }
   
   .input-sketch:focus::before {
     opacity: 0.6;
   }
   
-  /* 🎨 波浪分割线 */
+  /* 🎨 时间碎片化分割线 */
   .divider-wave {
-    height: 3px;
-    background: linear-gradient(
+    height: 2px;
+    background: repeating-linear-gradient(
       90deg,
-      transparent 0%,
-      currentColor 25%,
-      currentColor 75%,
-      transparent 100%
+      currentColor 0,
+      currentColor 8px,
+      transparent 8px,
+      transparent 16px
     );
     position: relative;
     overflow: hidden;
@@ -287,11 +279,11 @@
     left: -100%;
     width: 200%;
     height: 100%;
-    background: linear-gradient(
+    background: repeating-linear-gradient(
       90deg,
-      transparent 0%,
-      hsl(var(--accent-color)) 50%,
-      transparent 100%
+      transparent 0,
+      hsl(var(--accent-color)) 4px,
+      transparent 8px
     );
     animation: wave-flow var(--wave-speed) ease-in-out infinite;
   }
@@ -307,31 +299,32 @@
   
   /* 🎨 动态图标容器 */
   .icon-sketch {
-    @apply relative;
-    filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.1));
+    @apply relative rounded-lg;
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.1));
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
   
   .icon-sketch::before {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border: 2px dashed currentColor;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border: 1px dashed currentColor;
     opacity: 0;
     transition: all 0.3s ease;
     transform: rotate(0deg) scale(1);
+    border-radius: inherit;
   }
   
   .icon-sketch:hover {
-    transform: rotate(-5deg) scale(1.1);
+    transform: rotate(-3deg) scale(1.05);
   }
   
   .icon-sketch:hover::before {
     opacity: 0.4;
-    transform: rotate(5deg) scale(1.2);
+    transform: rotate(3deg) scale(1.1);
   }
   
   /* 🎨 浮动动画增强 */
@@ -344,13 +337,13 @@
       transform: translateY(0px) rotate(0deg);
     }
     25% {
-      transform: translateY(-8px) rotate(1deg);
+      transform: translateY(-4px) rotate(0.5deg);
     }
     50% {
-      transform: translateY(-12px) rotate(0deg);
+      transform: translateY(-6px) rotate(0deg);
     }
     75% {
-      transform: translateY(-8px) rotate(-1deg);
+      transform: translateY(-4px) rotate(-0.5deg);
     }
   }
   
@@ -365,38 +358,12 @@
       transform: scale(1) rotate(0deg);
     }
     50% {
-      opacity: 0.7;
-      transform: scale(1.05) rotate(2deg);
+      opacity: 0.8;
+      transform: scale(1.02) rotate(1deg);
     }
   }
   
-  /* 🎨 文字渐变效果 */
-  .text-gradient-dynamic {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--foreground)) 0%,
-      hsl(var(--accent-color)) 25%,
-      hsl(var(--accent-secondary)) 50%,
-      hsl(var(--accent-tertiary)) 75%,
-      hsl(var(--foreground)) 100%
-    );
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gradient-shift 4s ease-in-out infinite;
-  }
-  
-  @keyframes gradient-shift {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
-  
-  /* 🎨 强调色文字 */
+  /* 🎨 简化文字效果 - 移除渐变 */
   .text-accent {
     color: hsl(var(--accent-color));
     position: relative;
@@ -405,10 +372,10 @@
   .text-accent::after {
     content: '';
     position: absolute;
-    bottom: -2px;
+    bottom: -1px;
     left: 0;
     width: 0;
-    height: 2px;
+    height: 1px;
     background: currentColor;
     transition: width 0.3s ease;
   }
@@ -417,10 +384,10 @@
     width: 100%;
   }
   
-  /* 🎨 动态边框 */
+  /* 🎨 动态边框 - 使用断续线条 */
   .border-sketch {
-    border: 3px solid currentColor;
-    border-radius: 0;
+    border: 2px dashed currentColor;
+    border-radius: 0.75rem;
     position: relative;
     overflow: hidden;
   }
@@ -432,9 +399,10 @@
     left: -1px;
     right: -1px;
     bottom: -1px;
-    border: 1px dashed currentColor;
-    opacity: 0.5;
+    border: 1px dotted currentColor;
+    opacity: 0.3;
     animation: border-dance 6s linear infinite;
+    border-radius: inherit;
   }
   
   @keyframes border-dance {
@@ -442,13 +410,13 @@
       transform: rotate(0deg) scale(1);
     }
     25% {
-      transform: rotate(1deg) scale(1.01);
+      transform: rotate(0.5deg) scale(1.005);
     }
     50% {
       transform: rotate(0deg) scale(1);
     }
     75% {
-      transform: rotate(-1deg) scale(1.01);
+      transform: rotate(-0.5deg) scale(1.005);
     }
     100% {
       transform: rotate(0deg) scale(1);
@@ -471,7 +439,7 @@
   }
   
   .scrollbar-custom::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
   
   .scrollbar-custom::-webkit-scrollbar-track {
@@ -479,29 +447,22 @@
   }
   
   .scrollbar-custom::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      180deg,
-      hsl(var(--accent-color)) 0%,
-      hsl(var(--accent-secondary)) 100%
-    );
-    border-radius: 0;
+    background: hsl(var(--accent-color));
+    border-radius: 3px;
   }
   
   .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      180deg,
-      hsl(var(--accent-secondary)) 0%,
-      hsl(var(--accent-tertiary)) 100%
-    );
+    background: hsl(var(--foreground));
   }
   
   /* 🎨 动态加载器 */
   .loader-sketch {
-    width: 40px;
-    height: 40px;
-    border: 4px solid transparent;
-    border-top: 4px solid currentColor;
-    border-right: 4px solid currentColor;
+    width: 32px;
+    height: 32px;
+    border: 3px solid transparent;
+    border-top: 3px solid currentColor;
+    border-right: 3px dashed currentColor;
+    border-radius: 50%;
     position: relative;
     animation: spin-wobble 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
   }
@@ -513,7 +474,8 @@
     left: -2px;
     right: -2px;
     bottom: -2px;
-    border: 2px dashed currentColor;
+    border: 1px dotted currentColor;
+    border-radius: 50%;
     opacity: 0.3;
     animation: spin-reverse 2s linear infinite;
   }
@@ -523,13 +485,13 @@
       transform: rotate(0deg) scale(1);
     }
     25% {
-      transform: rotate(90deg) scale(1.1);
+      transform: rotate(90deg) scale(1.05);
     }
     50% {
       transform: rotate(180deg) scale(1);
     }
     75% {
-      transform: rotate(270deg) scale(1.1);
+      transform: rotate(270deg) scale(1.05);
     }
     100% {
       transform: rotate(360deg) scale(1);
@@ -547,11 +509,10 @@
   
   /* 🎨 通知样式 */
   .notification-sketch {
-    @apply border-3 border-black dark:border-white bg-white dark:bg-gray-900;
-    border-radius: 0;
+    @apply border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl;
     box-shadow: 
-      6px 6px 0 rgba(0, 0, 0, 0.1),
-      12px 12px 20px rgba(0, 0, 0, 0.1);
+      4px 4px 0 rgba(0, 0, 0, 0.1),
+      8px 8px 15px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
   }
@@ -563,11 +524,11 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
+    background: repeating-linear-gradient(
       90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.2) 50%,
-      transparent 100%
+      transparent 0,
+      rgba(255, 255, 255, 0.1) 4px,
+      transparent 8px
     );
     animation: notification-shine 3s ease-in-out infinite;
   }
@@ -583,13 +544,12 @@
   
   /* 🎨 模态框样式 */
   .modal-sketch {
-    @apply border-3 border-black dark:border-white;
-    border-radius: 0;
+    @apply border-2 border-black dark:border-white rounded-2xl;
     box-shadow: 
-      8px 8px 0 rgba(0, 0, 0, 0.1),
-      16px 16px 30px rgba(0, 0, 0, 0.2);
+      6px 6px 0 rgba(0, 0, 0, 0.1),
+      12px 12px 20px rgba(0, 0, 0, 0.2);
     position: relative;
-    transform: rotate(-0.5deg);
+    transform: rotate(-0.3deg);
     transition: transform 0.3s ease;
   }
   
@@ -599,7 +559,7 @@
   
   /* 🎨 导航样式 */
   .nav-sketch {
-    @apply border-b-3 border-black dark:border-white;
+    @apply border-b-2 border-black dark:border-white;
     background: hsl(var(--background) / 0.95);
     backdrop-filter: blur(10px);
     position: relative;
@@ -608,32 +568,32 @@
   .nav-sketch::before {
     content: '';
     position: absolute;
-    bottom: -3px;
+    bottom: -2px;
     left: 0;
     width: 100%;
-    height: 3px;
-    background: linear-gradient(
+    height: 2px;
+    background: repeating-linear-gradient(
       90deg,
-      hsl(var(--accent-color)) 0%,
-      hsl(var(--accent-secondary)) 50%,
-      hsl(var(--accent-tertiary)) 100%
+      hsl(var(--accent-color)) 0,
+      hsl(var(--accent-color)) 12px,
+      transparent 12px,
+      transparent 24px
     );
-    background-size: 200% 100%;
     animation: nav-flow 4s ease-in-out infinite;
   }
   
   @keyframes nav-flow {
     0%, 100% {
-      background-position: 0% 50%;
+      transform: translateX(0);
     }
     50% {
-      background-position: 100% 50%;
+      transform: translateX(12px);
     }
   }
   
   /* 🎨 页脚样式 */
   .footer-sketch {
-    @apply border-t-3 border-black dark:border-white;
+    @apply border-t-2 border-black dark:border-white;
     background: hsl(var(--muted));
     position: relative;
   }
@@ -641,16 +601,16 @@
   .footer-sketch::before {
     content: '';
     position: absolute;
-    top: -3px;
+    top: -2px;
     left: 0;
     width: 100%;
-    height: 3px;
+    height: 2px;
     background: repeating-linear-gradient(
       90deg,
       currentColor 0,
-      currentColor 20px,
-      transparent 20px,
-      transparent 40px
+      currentColor 16px,
+      transparent 16px,
+      transparent 32px
     );
     opacity: 0.3;
     animation: footer-march 8s linear infinite;
@@ -661,7 +621,7 @@
       transform: translateX(0);
     }
     100% {
-      transform: translateX(40px);
+      transform: translateX(32px);
     }
   }
   
@@ -685,23 +645,23 @@
   .glitch-text:hover::before {
     animation: glitch-1 0.3s ease-in-out;
     color: hsl(var(--accent-color));
-    transform: translate(-2px, -2px);
+    transform: translate(-1px, -1px);
   }
   
   .glitch-text:hover::after {
     animation: glitch-2 0.3s ease-in-out;
-    color: hsl(var(--accent-secondary));
-    transform: translate(2px, 2px);
+    color: hsl(var(--muted-foreground));
+    transform: translate(1px, 1px);
   }
   
   @keyframes glitch-1 {
     0%, 100% { opacity: 0; }
-    50% { opacity: 0.8; }
+    50% { opacity: 0.6; }
   }
   
   @keyframes glitch-2 {
     0%, 100% { opacity: 0; }
-    50% { opacity: 0.6; }
+    50% { opacity: 0.4; }
   }
   
   /* 🎨 磁性效果 */
@@ -710,7 +670,42 @@
   }
   
   .magnetic:hover {
-    transform: scale(1.05) rotate(2deg);
+    transform: scale(1.03) rotate(1deg);
+  }
+  
+  /* 🎨 圆形头像样式 */
+  .avatar-circular {
+    @apply rounded-full;
+    border: 2px solid currentColor;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .avatar-circular::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border: 1px dashed currentColor;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    animation: rotate-slow 8s linear infinite;
+  }
+  
+  .avatar-circular:hover::before {
+    opacity: 0.6;
+  }
+  
+  @keyframes rotate-slow {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 }
 
@@ -725,8 +720,8 @@
   .focus-visible {
     @apply outline-none;
     box-shadow: 
-      0 0 0 3px hsl(var(--accent-color) / 0.5),
-      6px 6px 0 hsl(var(--accent-color) / 0.2);
+      0 0 0 2px hsl(var(--accent-color) / 0.5),
+      4px 4px 0 hsl(var(--accent-color) / 0.2);
   }
   
   /* 隐藏滚动条但保持功能 */
@@ -765,8 +760,8 @@
 }
 
 .fc-theme-standard .fc-scrollgrid {
-  border: 3px solid hsl(var(--border));
-  border-radius: 0;
+  border: 2px solid hsl(var(--border));
+  border-radius: 0.75rem;
   overflow: hidden;
   position: relative;
 }
@@ -774,19 +769,20 @@
 .fc-theme-standard .fc-scrollgrid::before {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
   border: 1px dashed hsl(var(--accent-color));
   opacity: 0.3;
   pointer-events: none;
   z-index: 1;
+  border-radius: inherit;
 }
 
 .fc-theme-standard td, 
 .fc-theme-standard th {
-  border: 1px solid hsl(var(--border));
+  border: 1px dashed hsl(var(--border));
   position: relative;
 }
 
@@ -807,10 +803,12 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(
+  background: repeating-linear-gradient(
     90deg,
-    hsl(var(--accent-color)) 0%,
-    hsl(var(--accent-secondary)) 100%
+    hsl(var(--accent-color)) 0,
+    hsl(var(--accent-color)) 8px,
+    transparent 8px,
+    transparent 16px
   );
   transform: scaleX(0);
   transition: transform 0.3s ease;
@@ -823,6 +821,7 @@
 .fc-timegrid-slot {
   height: 3rem;
   transition: background-color 0.2s ease;
+  border-bottom: 1px dotted hsl(var(--border)) !important;
 }
 
 .fc-timegrid-slot:hover {
@@ -836,8 +835,8 @@
 }
 
 .fc-event {
-  border: 3px solid hsl(var(--foreground)) !important;
-  border-radius: 0 !important;
+  border: 2px solid hsl(var(--foreground)) !important;
+  border-radius: 0.75rem !important;
   background: hsl(var(--background)) !important;
   color: hsl(var(--foreground)) !important;
   font-weight: 500;
@@ -851,18 +850,15 @@
 .fc-event::before {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  right: -3px;
-  bottom: -3px;
-  background: linear-gradient(
-    135deg,
-    hsl(var(--accent-color)) 0%,
-    hsl(var(--accent-secondary)) 100%
-  );
+  top: 2px;
+  left: 2px;
+  right: -2px;
+  bottom: -2px;
+  background: hsl(var(--accent-color));
   z-index: -1;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  transform: rotate(0.5deg);
+  transform: rotate(0.3deg);
+  border-radius: inherit;
 }
 
 .fc-event::after {
@@ -875,18 +871,19 @@
   border: 1px dashed hsl(var(--accent-color));
   opacity: 0;
   transition: opacity 0.3s ease;
-  transform: rotate(-1deg);
+  transform: rotate(-0.5deg);
+  border-radius: inherit;
 }
 
 .fc-event:hover {
-  transform: translateY(-4px) rotate(-1deg) scale(1.02);
+  transform: translateY(-2px) rotate(-0.5deg) scale(1.01);
   box-shadow: 
-    6px 6px 0 rgba(0, 0, 0, 0.1),
-    12px 12px 20px rgba(0, 0, 0, 0.15);
+    4px 4px 0 rgba(0, 0, 0, 0.1),
+    8px 8px 15px rgba(0, 0, 0, 0.15);
 }
 
 .fc-event:hover::before {
-  transform: rotate(2deg) scale(1.05);
+  transform: rotate(1deg) scale(1.02);
 }
 
 .fc-event:hover::after {
@@ -911,42 +908,38 @@
 }
 
 .fc-event.completed-block::before {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--success-color)) 0%,
-    hsl(142 76% 50%) 100%
-  );
+  background: hsl(var(--success-color));
 }
 
 /* 选中状态 */
 .fc-event.selected {
   box-shadow: 
-    0 0 0 3px hsl(var(--accent-color) / 0.5),
-    6px 6px 0 rgba(0, 0, 0, 0.1);
+    0 0 0 2px hsl(var(--accent-color) / 0.5),
+    4px 4px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* 拖拽状态 */
 .fc-event-dragging {
   opacity: 0.9;
-  transform: rotate(5deg) scale(1.1);
+  transform: rotate(3deg) scale(1.05);
   z-index: 1000;
   box-shadow: 
-    8px 8px 0 rgba(0, 0, 0, 0.2),
-    16px 16px 30px rgba(0, 0, 0, 0.3);
+    6px 6px 0 rgba(0, 0, 0, 0.2),
+    12px 12px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* 调整大小手柄 */
 .fc-event-resizer {
   background: hsl(var(--accent-color)) !important;
   border: 2px solid hsl(var(--foreground)) !important;
-  width: 10px !important;
-  height: 10px !important;
-  border-radius: 0 !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
   transition: all 0.2s ease !important;
 }
 
 .fc-event-resizer:hover {
-  transform: scale(1.2) rotate(45deg) !important;
+  transform: scale(1.3) !important;
 }
 
 /* 今天的高亮 */
@@ -962,7 +955,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 2px dashed hsl(var(--accent-color));
+  border: 1px dashed hsl(var(--accent-color));
   opacity: 0.3;
   pointer-events: none;
   animation: today-pulse 3s ease-in-out infinite;
@@ -975,16 +968,16 @@
   }
   50% {
     opacity: 0.6;
-    transform: scale(1.01);
+    transform: scale(1.005);
   }
 }
 
 /* 按钮样式 */
 .fc-button {
   background: transparent !important;
-  border: 3px solid hsl(var(--foreground)) !important;
+  border: 2px solid hsl(var(--foreground)) !important;
   color: hsl(var(--foreground)) !important;
-  border-radius: 0 !important;
+  border-radius: 0.5rem !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
@@ -1013,22 +1006,22 @@
 
 .fc-button:hover {
   color: hsl(var(--background)) !important;
-  transform: translateY(-2px) rotate(-1deg) !important;
+  transform: translateY(-1px) rotate(-0.5deg) !important;
   box-shadow: 
-    4px 4px 0 rgba(0, 0, 0, 0.1),
-    8px 8px 15px rgba(0, 0, 0, 0.1) !important;
+    3px 3px 0 rgba(0, 0, 0, 0.1),
+    6px 6px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
 .fc-button:focus {
   box-shadow: 
-    0 0 0 3px hsl(var(--accent-color) / 0.5),
-    4px 4px 0 rgba(0, 0, 0, 0.1) !important;
+    0 0 0 2px hsl(var(--accent-color) / 0.5),
+    3px 3px 0 rgba(0, 0, 0, 0.1) !important;
 }
 
 .fc-button-active {
   background: hsl(var(--foreground)) !important;
   color: hsl(var(--background)) !important;
-  transform: translateY(-1px) !important;
+  transform: translateY(-0.5px) !important;
 }
 
 /* 工具栏 */
@@ -1040,15 +1033,15 @@
 .fc-toolbar::after {
   content: '';
   position: absolute;
-  bottom: -8px;
+  bottom: -6px;
   left: 0;
   right: 0;
-  height: 2px;
-  background: linear-gradient(
+  height: 1px;
+  background: repeating-linear-gradient(
     90deg,
-    transparent 0%,
-    hsl(var(--accent-color)) 50%,
-    transparent 100%
+    transparent 0,
+    hsl(var(--accent-color)) 4px,
+    transparent 8px
   );
 }
 
@@ -1088,11 +1081,11 @@
 }
 
 .shimmer {
-  background: linear-gradient(
+  background: repeating-linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
+    transparent 0,
+    rgba(255, 255, 255, 0.2) 4px,
+    transparent 8px
   );
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
@@ -1105,7 +1098,7 @@
 }
 
 .magnetic-button:hover {
-  transform: translateZ(10px) rotateX(5deg) rotateY(5deg);
+  transform: translateZ(5px) rotateX(2deg) rotateY(2deg);
 }
 
 /* 🎨 3D 卡片效果 */
@@ -1115,7 +1108,7 @@
 }
 
 .card-3d:hover {
-  transform: rotateX(5deg) rotateY(5deg) translateZ(20px);
+  transform: rotateX(2deg) rotateY(2deg) translateZ(10px);
 }
 
 /* 🎨 液体按钮效果 */
@@ -1138,6 +1131,6 @@
 }
 
 .liquid-button:hover::before {
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
 }

@@ -341,7 +341,7 @@ export default function CalendarView() {
             if (isEditing) {
               return (
                 <div 
-                  className="editing-area h-full w-full flex flex-col overflow-hidden relative bg-background border-2 border-accent" 
+                  className="editing-area h-full w-full flex flex-col overflow-hidden relative bg-background border-2 border-accent rounded-lg" 
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
@@ -398,7 +398,7 @@ export default function CalendarView() {
                   {/* Completion overlay */}
                   {isCompleted && (
                     <>
-                      <div className="absolute inset-0 bg-success-color/10 backdrop-blur-[1px]" />
+                      <div className="absolute inset-0 bg-success-color/10 backdrop-blur-[1px] rounded-lg" />
                       
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="relative">
@@ -422,7 +422,7 @@ export default function CalendarView() {
                   <div className="absolute -top-2 -right-2 z-20">
                     <button
                       className={cn(
-                        "w-8 h-8 border-2 border-current flex items-center justify-center transition-all duration-300 transform",
+                        "w-8 h-8 border-2 border-current flex items-center justify-center transition-all duration-300 transform rounded-full",
                         "shadow-lg backdrop-blur-sm",
                         isCompleted 
                           ? "bg-orange-500 text-white hover:bg-orange-600" 
@@ -467,7 +467,7 @@ export default function CalendarView() {
                   {/* Completion status */}
                   {isCompleted && (
                     <div className="absolute bottom-1 left-2 flex items-center gap-1 text-xs font-medium text-green-600 relative z-10">
-                      <div className="w-2 h-2 bg-green-500 animate-pulse" />
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                       <span>Completed</span>
                     </div>
                   )}
@@ -512,7 +512,7 @@ export default function CalendarView() {
           }}
         >
           <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-red-600 flex items-center gap-2"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-red-600 flex items-center gap-2 rounded-lg"
             onClick={() => handleContextMenuDelete(contextMenu.timeBlockId)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -556,19 +556,6 @@ export default function CalendarView() {
           </div>
         </div>
       ))}
-
-      {/* Instructions */}
-      <div className="absolute bottom-4 right-4 notification-sketch bg-background/95 backdrop-blur text-foreground text-xs px-4 py-3 pointer-events-none max-w-xs">
-        <div className="text-accent font-bold mb-2 font-mono">📋 Quick Guide</div>
-        <div className="space-y-1 text-xs">
-          <div>• Double-click: Create time block</div>
-          <div>• Double-click block: Edit title</div>
-          <div>• Drag edges: Resize block</div>
-          <div>• Drag center: Move block</div>
-          <div>• Right-click: Delete options</div>
-          <div className="text-accent font-bold mt-2">✨ Click ✓ to complete!</div>
-        </div>
-      </div>
 
       {/* Enhanced CSS Styles */}
       <style jsx global>{`
