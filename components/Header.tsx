@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/contexts/AuthContext';
-import { CalendarIcon, Menu, X, LogIn } from 'lucide-react';
+import { CalendarIcon, Menu, X, LogIn, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
@@ -24,101 +24,110 @@ export default function Header() {
 
   return (
     <>
-      <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400"
-                style={{ fontFamily: "'Courier New', monospace" }}>
-              ChronoBlock
-            </h1>
-            <div className="hidden md:flex items-center ml-6">
-              <ViewSwitcher currentView={currentView} setCurrentView={setCurrentView} />
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={toggleTheme} 
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-            </Button>
-            
-            <div className="text-muted-foreground text-sm">
-              {format(new Date(), 'MMMM d, yyyy')}
-            </div>
-
-            {/* Auth Section */}
-            {loading ? (
-              <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
-            ) : user ? (
-              <UserMenu />
-            ) : (
-              <Button 
-                onClick={() => setShowAuthModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Button>
-            )}
-          </div>
-
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-foreground"
-            >
-              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden py-3 px-4 space-y-4 border-t border-border bg-background">
-            <ViewSwitcher currentView={currentView} setCurrentView={setCurrentView} />
-            <div className="flex items-center justify-between">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={toggleTheme}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-              </Button>
-              <div className="text-muted-foreground text-sm">
-                {format(new Date(), 'MMMM d, yyyy')}
+      <header className="nav-sketch sticky top-0 z-50">
+        <div className="container-custom py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 border-2 border-current flex items-center justify-center">
+                  <div className="w-4 h-4 border border-dashed border-current transform rotate-12"></div>
+                </div>
+                <h1 className="text-xl font-bold font-mono tracking-tight">
+                  ChronoBlock
+                </h1>
+              </div>
+              
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center">
+                <ViewSwitcher currentView={currentView} setCurrentView={setCurrentView} />
               </div>
             </div>
-            
-            {/* Mobile Auth Section */}
-            <div className="pt-2 border-t border-border">
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center space-x-6">
+              <button 
+                onClick={toggleTheme}
+                className="p-2 hover:bg-muted rounded-none transition-colors"
+                title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+              </button>
+              
+              <div className="text-muted-foreground text-sm font-mono">
+                {format(new Date(), 'MMM d, yyyy')}
+              </div>
+
+              {/* Auth Section */}
               {loading ? (
-                <div className="w-full h-10 rounded bg-muted animate-pulse" />
+                <div className="w-10 h-10 border-2 border-current animate-pulse-sketch"></div>
               ) : user ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Signed in as {user.email}
-                  </span>
-                  <UserMenu />
-                </div>
+                <UserMenu />
               ) : (
-                <Button 
+                <button 
                   onClick={() => setShowAuthModal(true)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  className="btn-sketch px-4 py-2 flex items-center gap-2"
                 >
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </Button>
+                  <LogIn size={16} />
+                  <span>Sign In</span>
+                </button>
               )}
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 hover:bg-muted transition-colors"
+              >
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-6 pt-6 border-t-2 border-current space-y-6">
+              <ViewSwitcher currentView={currentView} setCurrentView={setCurrentView} />
+              
+              <div className="flex items-center justify-between">
+                <button 
+                  onClick={toggleTheme}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                  <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                </button>
+                
+                <div className="text-muted-foreground text-sm font-mono">
+                  {format(new Date(), 'MMM d')}
+                </div>
+              </div>
+              
+              {/* Mobile Auth Section */}
+              <div className="pt-4 border-t border-current">
+                {loading ? (
+                  <div className="w-full h-12 border-2 border-current animate-pulse-sketch"></div>
+                ) : user ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground font-mono">
+                      {user.email}
+                    </span>
+                    <UserMenu />
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="btn-sketch w-full py-3 flex items-center justify-center gap-2"
+                  >
+                    <LogIn size={16} />
+                    <span>Sign In</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       <AuthModal 
@@ -136,19 +145,19 @@ interface ViewSwitcherProps {
 
 function ViewSwitcher({ currentView, setCurrentView }: ViewSwitcherProps) {
   return (
-    <div className="flex bg-muted rounded-md p-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
+    <div className="flex border-2 border-current">
+      <button
         onClick={() => setCurrentView('calendar')}
         className={cn(
-          "rounded-sm h-8",
-          currentView === 'calendar' && "bg-white dark:bg-gray-800 shadow-sm"
+          "px-4 py-2 flex items-center gap-2 text-sm font-medium transition-all",
+          currentView === 'calendar' 
+            ? "bg-foreground text-background" 
+            : "bg-transparent hover:bg-muted"
         )}
       >
-        <CalendarIcon size={16} className="mr-2" />
-        Calendar
-      </Button>
+        <CalendarIcon size={16} />
+        <span>Calendar</span>
+      </button>
     </div>
   );
 }

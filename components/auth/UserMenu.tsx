@@ -31,39 +31,37 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10 border-2 border-gradient-to-r from-blue-500 to-purple-500">
-            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+        <Button variant="ghost" className="relative h-10 w-10 p-0">
+          <div className="w-10 h-10 border-2 border-current flex items-center justify-center font-bold hover:bg-muted transition-colors">
+            {userInitials}
+          </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="modal-sketch w-56 bg-background" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">Account</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-xs leading-none text-muted-foreground font-mono">
               {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuSeparator className="bg-current opacity-20" />
+        <DropdownMenuItem className="cursor-pointer hover:bg-muted">
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer hover:bg-muted">
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer hover:bg-muted">
           <Crown className="mr-2 h-4 w-4" />
           <span>Upgrade to Pro</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-current opacity-20" />
         <DropdownMenuItem 
-          className="cursor-pointer text-red-600 focus:text-red-600"
+          className="cursor-pointer text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
           onClick={handleSignOut}
           disabled={loading}
         >

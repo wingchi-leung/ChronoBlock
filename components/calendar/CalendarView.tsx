@@ -10,7 +10,7 @@ import { TimeBlock } from '@/types';
 import { addMinutes } from 'date-fns';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Check, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
+import { Check, CheckCircle2, RotateCcw, Sparkles, AlertTriangle } from 'lucide-react';
 
 export default function CalendarView() {
   const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, toggleTimeBlockCompletion, convertTaskToTimeBlock, checkTimeConflict } = useStore();
@@ -47,13 +47,11 @@ export default function CalendarView() {
       
       // Handle editing state
       if (inlineEditingId) {
-        // Check if clicking inside the editing area
         const isEditingArea = target.closest('.editing-area') || 
                              target.closest('textarea') ||
                              target.tagName.toLowerCase() === 'textarea';
         
         if (!isEditingArea) {
-          // Save and exit editing mode when clicking outside
           if (editValue.trim()) {
             updateTimeBlock(inlineEditingId, { title: editValue.trim() });
           }
@@ -65,11 +63,9 @@ export default function CalendarView() {
       
       setContextMenu(null);
       
-      // Check if click is outside any time block
       const isTimeBlockClick = target.closest('.fc-event');
       
       if (!isTimeBlockClick) {
-        // Clear selection when clicking outside time blocks
         setSelectedTimeBlockId(null);
       }
     };
@@ -88,31 +84,26 @@ export default function CalendarView() {
     if (conflictMessage) {
       const timer = setTimeout(() => {
         setConflictMessage(null);
-      }, 3000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [conflictMessage]);
 
-  // Function to show conflict message
   const showConflictMessage = (message: string) => {
     setConflictMessage(message);
   };
 
-  // Function to handle double-click for time block creation
   const handleDateClick = (clickInfo: any) => {
     const currentTime = Date.now();
     const timeDiff = currentTime - lastClickTime;
     
-    // Check if this is a double-click (within 300ms and same location)
     if (timeDiff < 300 && lastClickInfo && 
         Math.abs(lastClickInfo.jsEvent.clientX - clickInfo.jsEvent.clientX) < 10 &&
         Math.abs(lastClickInfo.jsEvent.clientY - clickInfo.jsEvent.clientY) < 10) {
       
-      // This is a double-click, create time block
       const { date } = clickInfo;
-      const endTime = addMinutes(date, 45); // 45 minutes default
+      const endTime = addMinutes(date, 45);
       
-      // Check for conflicts before creating
       if (checkTimeConflict(date, endTime)) {
         showConflictMessage('Cannot create time block: Time slot is already occupied');
         return;
@@ -124,27 +115,22 @@ export default function CalendarView() {
       }
     }
     
-    // Store click info for double-click detection
     setLastClickTime(currentTime);
     setLastClickInfo(clickInfo);
   };
 
-  // Remove the old select handler since we're using double-click now
   const handleDateSelect = (selectInfo: any) => {
-    // Clear the selection immediately since we don't want selection-based creation
     if (calendarRef.current) {
       calendarRef.current.getApi().unselect();
     }
   };
 
-  // Function to handle time block updates (drag & resize) with conflict checking
   const handleEventChange = (changeInfo: any) => {
     const { event, revert } = changeInfo;
     
-    // Check for conflicts before updating (excluding the current event)
     if (checkTimeConflict(event.start, event.end, event.id)) {
       showConflictMessage('Cannot move/resize time block: Time slot is already occupied');
-      revert(); // Revert the change
+      revert();
       return;
     }
     
@@ -155,31 +141,26 @@ export default function CalendarView() {
     
     if (!success) {
       showConflictMessage('Cannot update time block: Time conflict detected');
-      revert(); // Revert the change
+      revert();
     }
   };
 
-  // Function to handle double-clicking on a time block to edit it inline
   const handleEventClick = (clickInfo: any) => {
     const { event } = clickInfo;
     const timeBlock = timeBlocks.find(block => block.id === event.id);
     if (!timeBlock) return;
     
-    // Prevent default calendar behavior
     clickInfo.jsEvent.preventDefault();
     clickInfo.jsEvent.stopPropagation();
     
-    // Set as selected
     setSelectedTimeBlockId(event.id);
     
-    // Start inline editing on double click
     if (clickInfo.jsEvent.detail === 2) {
       setInlineEditingId(event.id);
       setEditValue(timeBlock.title);
     }
   };
 
-  // Function to handle right-click context menu
   const handleEventRightClick = (clickInfo: any) => {
     clickInfo.jsEvent.preventDefault();
     clickInfo.jsEvent.stopPropagation();
@@ -193,14 +174,12 @@ export default function CalendarView() {
     });
   };
 
-  // Function to handle context menu delete
   const handleContextMenuDelete = (timeBlockId: string) => {
     deleteTimeBlock(timeBlockId);
     setContextMenu(null);
     setSelectedTimeBlockId(null);
   };
 
-  // Function to handle time block completion with fireworks
   const handleCompleteTimeBlock = (timeBlockId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -208,120 +187,86 @@ export default function CalendarView() {
     const timeBlock = timeBlocks.find(block => block.id === timeBlockId);
     if (!timeBlock) return;
     
-    // 如果是标记为完成，显示烟花效果
     if (!timeBlock.completed) {
-      // Get the position for fireworks
       const rect = (event.target as HTMLElement).getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       
-      // Add fireworks effect
       const fireworkId = `firework-${Date.now()}`;
       setFireworks(prev => [...prev, { id: fireworkId, x, y }]);
       
-      // Remove firework after animation
       setTimeout(() => {
         setFireworks(prev => prev.filter(f => f.id !== fireworkId));
-      }, 1000);
+      }, 1200);
     }
     
-    // 切换完成状态而不是删除
     toggleTimeBlockCompletion(timeBlockId);
     setSelectedTimeBlockId(null);
   };
 
-  // 🔥 关键修复：外部拖拽处理
   const handleDrop = (dropInfo: any) => {
-    console.log('🎯 Drop event triggered:', dropInfo);
-    
-    // 阻止默认行为
     dropInfo.jsEvent.preventDefault();
     
     try {
-      // 方法1：从拖拽事件的dataTransfer中获取数据
       let taskData = null;
       
-      // 尝试从dataTransfer获取数据
       try {
         const transferData = dropInfo.jsEvent.dataTransfer?.getData('text/plain');
         if (transferData) {
           taskData = JSON.parse(transferData);
-          console.log('📦 Got task data from dataTransfer:', taskData);
         }
       } catch (e) {
-        console.log('⚠️ Failed to get data from dataTransfer:', e);
+        console.log('Failed to get data from dataTransfer:', e);
       }
       
-      // 方法2：从拖拽元素的dataset获取数据
       if (!taskData && dropInfo.draggedEl?.dataset?.task) {
         try {
           taskData = JSON.parse(dropInfo.draggedEl.dataset.task);
-          console.log('📦 Got task data from dataset:', taskData);
         } catch (e) {
-          console.log('⚠️ Failed to get data from dataset:', e);
+          console.log('Failed to get data from dataset:', e);
         }
       }
       
-      // 方法3：从全局拖拽状态获取（如果有的话）
       if (!taskData) {
-        console.log('❌ No task data found, checking global state...');
         return;
       }
       
       if (taskData && taskData.id) {
-        console.log('✅ Processing task:', taskData.title);
-        
-        // 检查时间冲突
         const duration = taskData.estimatedDuration || 45;
         const endTime = addMinutes(dropInfo.date, duration);
-        
-        console.log('🕐 Checking conflict for:', dropInfo.date, 'to', endTime);
         
         if (checkTimeConflict(dropInfo.date, endTime)) {
           showConflictMessage('Cannot drop task: Time slot is already occupied');
           return;
         }
         
-        // 转换任务为时间块
-        console.log('🔄 Converting task to time block...');
         const success = convertTaskToTimeBlock(taskData.id, dropInfo.date);
         
-        if (success) {
-          console.log('🎉 Task converted successfully!');
-        } else {
+        if (!success) {
           showConflictMessage('Cannot convert task: Time conflict detected');
         }
-      } else {
-        console.log('❌ Invalid task data:', taskData);
       }
     } catch (error) {
-      console.error('💥 Error in handleDrop:', error);
+      console.error('Error in handleDrop:', error);
       showConflictMessage('Error processing dropped task');
     }
   };
 
-  // 🔥 关键修复：拖拽进入处理
   const handleDragEnter = (info: any) => {
-    console.log('🚪 Drag enter:', info);
-    // 阻止默认行为，允许拖拽
     info.jsEvent.preventDefault();
-    return false; // 返回false表示允许拖拽
+    return false;
   };
 
-  // 🔥 关键修复：拖拽悬停处理
   const handleDragOver = (info: any) => {
-    console.log('🔄 Drag over:', info);
-    // 阻止默认行为，允许拖拽
     info.jsEvent.preventDefault();
-    info.jsEvent.dataTransfer.dropEffect = 'move'; // 设置拖拽效果
-    return false; // 返回false表示允许拖拽
+    info.jsEvent.dataTransfer.dropEffect = 'move';
+    return false;
   };
 
   const handleDragLeave = (info: any) => {
-    console.log('🚪 Drag leave:', info);
+    // Handle drag leave if needed
   };
 
-  // Function to save inline edit
   const handleSaveInlineEdit = (eventId: string) => {
     if (editValue.trim()) {
       updateTimeBlock(eventId, { title: editValue.trim() });
@@ -330,15 +275,14 @@ export default function CalendarView() {
     setEditValue('');
   };
 
-  // Function to cancel inline edit
   const handleCancelInlineEdit = () => {
     setInlineEditingId(null);
     setEditValue('');
   };
 
   return (
-    <div className="w-full h-full relative">
-      <div className="h-full border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden bg-white dark:bg-gray-900">
+    <div className="w-full h-full relative bg-background">
+      <div className="h-full border-sketch overflow-hidden">
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -360,15 +304,12 @@ export default function CalendarView() {
           selectable={true}
           selectMirror={true}
           dayMaxEvents={true}
-          // 🔥 关键配置：启用外部拖拽
           droppable={true}
           dropAccept="*"
-          // 🔥 关键配置：时间相关
           slotMinTime="06:00:00"
           slotMaxTime="22:00:00"
           slotDuration="00:15:00"
           snapDuration="00:05:00"
-          // 🔥 关键配置：重叠和约束
           selectOverlap={false}
           eventOverlap={false}
           eventResizableFromStart={true}
@@ -382,12 +323,10 @@ export default function CalendarView() {
             start: '06:00',
             end: '22:00'
           }}
-          // 🔥 关键事件处理器
           dateClick={handleDateClick}
           select={handleDateSelect}
           eventClick={handleEventClick}
           eventChange={handleEventChange}
-          // 🔥 关键拖拽事件处理器
           drop={handleDrop}
           dragEnter={handleDragEnter}
           dragOver={handleDragOver}
@@ -402,22 +341,20 @@ export default function CalendarView() {
             if (isEditing) {
               return (
                 <div 
-                  className="editing-area h-full w-full flex flex-col overflow-hidden relative" 
+                  className="editing-area h-full w-full flex flex-col overflow-hidden relative bg-background border-2 border-accent" 
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  {/* Time display */}
-                  <div className="text-xs font-medium mb-1 text-gray-900 dark:text-gray-100 px-2 pt-1 flex-shrink-0">
+                  <div className="text-xs font-mono mb-1 text-foreground px-2 pt-1 flex-shrink-0">
                     {info.timeText}
                   </div>
                   
-                  {/* Full-size editing area */}
                   <div className="flex-1 relative">
                     <textarea
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={(e) => {
-                        e.stopPropagation(); // Prevent event bubbling
+                        e.stopPropagation();
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           handleSaveInlineEdit(info.event.id);
@@ -426,13 +363,9 @@ export default function CalendarView() {
                           handleCancelInlineEdit();
                         }
                       }}
-                      onClick={(e) => e.stopPropagation()} // Prevent click from bubbling
-                      onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from bubbling
-                      className="absolute inset-0 w-full h-full text-sm resize-none text-gray-900 dark:text-gray-100 focus:outline-none p-2 leading-relaxed bg-transparent border-none"
-                      style={{
-                        background: 'transparent',
-                        boxShadow: 'none'
-                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className="absolute inset-0 w-full h-full text-sm resize-none text-foreground focus:outline-none p-2 leading-relaxed bg-transparent border-none"
                       autoFocus
                       onFocus={(e) => e.target.select()}
                       placeholder="Enter time block title..."
@@ -447,12 +380,12 @@ export default function CalendarView() {
             const displayTitle = shouldTruncate ? `${info.event.title.substring(0, 30)}...` : info.event.title;
             
             return (
-              <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options, Drag edges to resize)`}>
+              <Tooltip content={shouldTruncate ? info.event.title : `${info.event.title} (Double-click to edit, Right-click for options)`}>
                 <div 
                   className={cn(
                     "h-full w-full p-3 overflow-hidden cursor-pointer transition-all duration-300 relative group",
-                    isSelected && "ring-2 ring-blue-500 ring-inset",
-                    isCompleted && "transform scale-[0.98]"
+                    isSelected && "ring-2 ring-accent ring-inset",
+                    isCompleted && "opacity-75"
                   )}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -462,97 +395,80 @@ export default function CalendarView() {
                     });
                   }}
                 >
-                  {/* 🎨 美观的完成状态覆盖层 */}
+                  {/* Completion overlay */}
                   {isCompleted && (
                     <>
-                      {/* 渐变覆盖层 */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/80 via-green-50/60 to-teal-100/80 dark:from-emerald-900/40 dark:via-green-800/30 dark:to-teal-900/40 rounded-sm backdrop-blur-[1px]" />
+                      <div className="absolute inset-0 bg-success-color/10 backdrop-blur-[1px]" />
                       
-                      {/* 完成图标 - 更精美的设计 */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="relative">
-                          {/* 光晕效果 */}
-                          <div className="absolute inset-0 bg-emerald-400/30 dark:bg-emerald-300/20 rounded-full blur-md scale-150 animate-pulse" />
-                          {/* 主图标 */}
-                          <div className="relative bg-gradient-to-br from-emerald-400 to-green-500 dark:from-emerald-300 dark:to-green-400 rounded-full p-2 shadow-lg">
-                            <CheckCircle2 size={20} className="text-white drop-shadow-sm" />
+                          <div className="absolute inset-0 bg-green-400/30 rounded-full blur-md scale-150 animate-pulse" />
+                          <div className="relative bg-green-500 rounded-full p-2 shadow-lg">
+                            <CheckCircle2 size={20} className="text-white" />
                           </div>
                         </div>
                       </div>
                       
-                      {/* 装饰性星星 */}
                       <div className="absolute top-2 left-2">
-                        <Sparkles size={12} className="text-emerald-400 dark:text-emerald-300 opacity-60 animate-pulse" />
+                        <Sparkles size={12} className="text-green-400 opacity-60 animate-pulse" />
                       </div>
                       <div className="absolute bottom-2 right-8">
-                        <Sparkles size={10} className="text-green-400 dark:text-green-300 opacity-40 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                        <Sparkles size={10} className="text-green-300 opacity-40 animate-pulse" style={{ animationDelay: '0.5s' }} />
                       </div>
                     </>
                   )}
                   
-                  {/* 🎨 精美的完成/取消完成按钮 */}
+                  {/* Action button */}
                   <div className="absolute -top-2 -right-2 z-20">
                     <button
                       className={cn(
-                        "relative w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 transform",
-                        "shadow-lg border-2 backdrop-blur-sm",
+                        "w-8 h-8 border-2 border-current flex items-center justify-center transition-all duration-300 transform",
+                        "shadow-lg backdrop-blur-sm",
                         isCompleted 
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 border-amber-300 hover:from-amber-500 hover:to-orange-600 text-white" 
-                          : "bg-gradient-to-br from-emerald-400 to-green-500 border-emerald-300 hover:from-emerald-500 hover:to-green-600 text-white",
+                          ? "bg-orange-500 text-white hover:bg-orange-600" 
+                          : "bg-green-500 text-white hover:bg-green-600",
                         "hover:scale-110 hover:shadow-xl hover:-translate-y-0.5",
-                        "group-hover:opacity-100 opacity-80",
-                        "before:absolute before:inset-0 before:rounded-full before:bg-white/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity"
+                        "group-hover:opacity-100 opacity-80"
                       )}
                       onClick={(e) => handleCompleteTimeBlock(info.event.id, e)}
                       title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
                     >
-                      {/* 按钮内容 */}
-                      <div className="relative z-10">
-                        {isCompleted ? (
-                          <RotateCcw size={14} className="drop-shadow-sm" />
-                        ) : (
-                          <Check size={14} className="drop-shadow-sm" />
-                        )}
-                      </div>
-                      
-                      {/* 光晕效果 */}
-                      <div className={cn(
-                        "absolute inset-0 rounded-full blur-sm opacity-50 transition-opacity",
-                        isCompleted 
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500" 
-                          : "bg-gradient-to-br from-emerald-400 to-green-500"
-                      )} />
+                      {isCompleted ? (
+                        <RotateCcw size={14} />
+                      ) : (
+                        <Check size={14} />
+                      )}
                     </button>
                   </div>
                   
-                  {/* 时间显示 */}
+                  {/* Time display */}
                   <div className={cn(
-                    "text-xs font-medium mb-1 relative z-10",
+                    "text-xs font-mono mb-1 relative z-10",
                     isCompleted 
-                      ? "text-gray-600 dark:text-gray-300 line-through opacity-75" 
-                      : "text-gray-900 dark:text-gray-100"
+                      ? "text-muted-foreground line-through opacity-75" 
+                      : "text-foreground"
                   )}>
                     {info.timeText}
                   </div>
                   
-                  {/* 标题显示 */}
+                  {/* Title display */}
                   <div 
                     className={cn(
                       "text-sm font-medium leading-tight pr-4 relative z-10",
                       isCompleted 
-                        ? "text-gray-600 dark:text-gray-300 line-through opacity-75" 
-                        : "text-gray-900 dark:text-gray-100"
+                        ? "text-muted-foreground line-through opacity-75" 
+                        : "text-foreground"
                     )}
                     title={shouldTruncate ? info.event.title : undefined}
                   >
                     {displayTitle}
                   </div>
                   
-                  {/* 🎨 精美的完成标记 */}
+                  {/* Completion status */}
                   {isCompleted && (
-                    <div className="absolute bottom-1 left-2 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 relative z-10">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                      <span className="drop-shadow-sm">Completed</span>
+                    <div className="absolute bottom-1 left-2 flex items-center gap-1 text-xs font-medium text-green-600 relative z-10">
+                      <div className="w-2 h-2 bg-green-500 animate-pulse" />
+                      <span>Completed</span>
                     </div>
                   )}
                 </div>
@@ -566,23 +482,21 @@ export default function CalendarView() {
             const isCompleted = timeBlock?.completed || false;
             
             return [
-              'border-2 border-gray-800 dark:border-gray-200',
+              'border-2 border-foreground',
               'cursor-pointer',
               'transition-all duration-300',
-              'fc-event-clean', // Custom class for clean rendering
-              'group', // Add group class for hover effects
-              'overflow-visible', // Allow buttons to show outside
+              'group',
+              'overflow-visible',
               isEditing 
-                ? 'ring-2 ring-blue-500 shadow-lg transform scale-[1.02]' 
+                ? 'ring-2 ring-accent shadow-lg transform scale-[1.02]' 
                 : isSelected
-                ? 'ring-2 ring-blue-400 shadow-md'
+                ? 'ring-2 ring-accent/50 shadow-md'
                 : 'hover:shadow-lg hover:transform hover:scale-[1.01]',
-              // 🎨 Enhanced background with beautiful gradients
               isCompleted
-                ? 'bg-gradient-to-br from-emerald-50/90 via-green-50/80 to-teal-50/90 dark:from-emerald-900/30 dark:via-green-800/25 dark:to-teal-900/30 border-emerald-300 dark:border-emerald-600'
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
                 : isEditing
-                ? 'bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30'
-                : 'bg-gradient-to-br from-white via-gray-50 to-slate-50 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 hover:from-gray-50 hover:via-slate-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:via-gray-750 dark:hover:to-gray-800'
+                ? 'bg-accent/10'
+                : 'bg-background hover:bg-muted/50'
             ];
           }}
         />
@@ -591,14 +505,14 @@ export default function CalendarView() {
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 min-w-[120px]"
+          className="fixed z-50 modal-sketch bg-background border-foreground min-w-[120px]"
           style={{
             left: contextMenu.x,
             top: contextMenu.y
           }}
         >
           <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center gap-2"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-muted text-red-600 flex items-center gap-2"
             onClick={() => handleContextMenuDelete(contextMenu.timeBlockId)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,15 +525,13 @@ export default function CalendarView() {
 
       {/* Conflict Message */}
       {conflictMessage && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-          {conflictMessage}
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 notification-sketch bg-red-50 dark:bg-red-950 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 z-50 flex items-center gap-2 max-w-md">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{conflictMessage}</span>
         </div>
       )}
 
-      {/* 🎆 Enhanced Fireworks Animation */}
+      {/* Fireworks Animation */}
       {fireworks.map((firework) => (
         <div
           key={firework.id}
@@ -646,206 +558,21 @@ export default function CalendarView() {
       ))}
 
       {/* Instructions */}
-      <div className="absolute bottom-4 right-4 bg-black/80 text-white text-xs px-3 py-2 rounded-lg backdrop-blur-sm pointer-events-none">
-        <div className="text-emerald-300 font-medium">📋 Instructions:</div>
-        <div>Double-click: Create time block</div>
-        <div>Double-click block: Edit</div>
-        <div>Drag edges: Resize</div>
-        <div>Drag center: Move</div>
-        <div>Right-click: Delete</div>
-        <div>Del key: Delete selected</div>
-        <div className="text-emerald-300 mt-1 font-bold">✨ Click ✓ to complete!</div>
-        <div className="text-amber-300 font-bold">🔄 Click ↻ to undo!</div>
-        <div className="text-yellow-300">⚠️ Overlapping prevented</div>
+      <div className="absolute bottom-4 right-4 notification-sketch bg-background/95 backdrop-blur text-foreground text-xs px-4 py-3 pointer-events-none max-w-xs">
+        <div className="text-accent font-bold mb-2 font-mono">📋 Quick Guide</div>
+        <div className="space-y-1 text-xs">
+          <div>• Double-click: Create time block</div>
+          <div>• Double-click block: Edit title</div>
+          <div>• Drag edges: Resize block</div>
+          <div>• Drag center: Move block</div>
+          <div>• Right-click: Delete options</div>
+          <div className="text-accent font-bold mt-2">✨ Click ✓ to complete!</div>
+        </div>
       </div>
 
-      {/* 🎨 Enhanced CSS Styles */}
+      {/* Enhanced CSS Styles */}
       <style jsx global>{`
-        /* 🎯 关键：启用拖拽放置区域 */
-        .fc-timegrid-body,
-        .fc-timegrid-slots,
-        .fc-timegrid-slot,
-        .fc-timegrid-slot-lane {
-          pointer-events: all !important;
-        }
-        
-        /* 🎯 关键：拖拽悬停效果 */
-        .fc-highlight {
-          background: rgba(59, 130, 246, 0.15) !important;
-          border: 2px dashed rgba(59, 130, 246, 0.6) !important;
-          border-radius: 4px !important;
-        }
-        
-        /* 🎯 关键：拖拽时的视觉反馈 */
-        .fc-timegrid-slot:hover {
-          background: rgba(59, 130, 246, 0.05) !important;
-        }
-        
-        /* 彻底禁用所有进度条相关的渲染 */
-        .fc-event,
-        .fc-event *,
-        .fc-event::before,
-        .fc-event::after,
-        .fc-event *::before,
-        .fc-event *::after {
-          background-image: none !important;
-          background-size: 0 !important;
-          background-position: 0 !important;
-          background-repeat: no-repeat !important;
-        }
-        
-        /* 强制移除FullCalendar的内置进度条 */
-        .fc-event-main,
-        .fc-event-main-frame,
-        .fc-event-title-container,
-        .fc-event-time,
-        .fc-event-title {
-          background: none !important;
-          background-image: none !important;
-          position: relative !important;
-        }
-        
-        /* 移除所有可能的伪元素进度条 */
-        .fc-event-main::after,
-        .fc-event-main::before,
-        .fc-event-main-frame::after,
-        .fc-event-main-frame::before,
-        .fc-event-title-container::after,
-        .fc-event-title-container::before {
-          display: none !important;
-          content: none !important;
-          background: none !important;
-          background-image: none !important;
-        }
-        
-        /* 确保编辑区域干净 */
-        .editing-area,
-        .editing-area *,
-        .editing-area::before,
-        .editing-area::after,
-        .editing-area *::before,
-        .editing-area *::after {
-          background-image: none !important;
-        }
-        
-        /* 启用调整大小功能 - 显示调整手柄 */
-        .fc-event-resizer {
-          display: block !important;
-          position: absolute !important;
-          z-index: 9999 !important;
-          background: rgba(59, 130, 246, 0.8) !important;
-          border: 1px solid rgba(59, 130, 246, 1) !important;
-          width: 8px !important;
-          height: 8px !important;
-          border-radius: 50% !important;
-          cursor: ns-resize !important;
-        }
-        
-        .fc-event-resizer-start {
-          top: -4px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          cursor: n-resize !important;
-        }
-        
-        .fc-event-resizer-end {
-          bottom: -4px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          cursor: s-resize !important;
-        }
-        
-        /* 悬停时显示调整手柄 */
-        .fc-event:hover .fc-event-resizer {
-          opacity: 1 !important;
-          visibility: visible !important;
-        }
-        
-        .fc-event .fc-event-resizer {
-          opacity: 0 !important;
-          visibility: hidden !important;
-          transition: opacity 0.2s ease !important;
-        }
-        
-        /* 选中时显示调整手柄 */
-        .fc-event.fc-event-selected .fc-event-resizer,
-        .fc-event[class*="ring-2"] .fc-event-resizer {
-          opacity: 1 !important;
-          visibility: visible !important;
-        }
-        
-        /* 移除任何可能的进度指示器，但保留调整手柄 */
-        .fc-event .fc-event-bg {
-          display: none !important;
-        }
-        
-        /* 强制清理所有事件元素 */
-        .fc-event-clean {
-          background: none !important;
-          background-image: none !important;
-        }
-        
-        .fc-event-clean * {
-          background: none !important;
-          background-image: none !important;
-        }
-        
-        /* 覆盖任何内联样式 */
-        .fc-event[style*="background"],
-        .fc-event[style*="linear-gradient"],
-        .fc-event[style*="progress"] {
-          background: none !important;
-          background-image: none !important;
-        }
-        
-        /* 确保textarea编辑器正常显示 - 移除明显的文本框样式 */
-        .editing-area textarea {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          z-index: 1001 !important;
-          background: transparent !important;
-          border: none !important;
-          outline: none !important;
-          box-shadow: none !important;
-          resize: none !important;
-        }
-        
-        /* 完全禁用FullCalendar的进度渲染系统 */
-        .fc-event-main-frame .fc-event-title-container {
-          overflow: hidden !important;
-          background: none !important;
-        }
-        
-        /* 移除所有可能导致进度条的CSS属性 */
-        .fc-event * {
-          background-attachment: initial !important;
-          background-blend-mode: initial !important;
-          background-clip: initial !important;
-          background-color: transparent !important;
-          background-image: none !important;
-          background-origin: initial !important;
-          background-position: initial !important;
-          background-repeat: initial !important;
-          background-size: initial !important;
-        }
-        
-        /* 确保拖拽和调整大小时的视觉反馈 */
-        .fc-event-dragging {
-          opacity: 0.8 !important;
-          transform: scale(1.05) !important;
-          z-index: 1000 !important;
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        .fc-event-resizing {
-          opacity: 0.9 !important;
-          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
-        }
-
-        /* 🎆 Enhanced Fireworks Animation */
+        /* Fireworks Animation */
         .firework-container {
           position: relative;
           width: 60px;
@@ -858,7 +585,7 @@ export default function CalendarView() {
           left: 50%;
           width: 6px;
           height: 6px;
-          background: var(--color, linear-gradient(45deg, #10b981, #34d399, #6ee7b7));
+          background: var(--color, #10b981);
           border-radius: 50%;
           animation: firework-explode 1.2s ease-out forwards;
           transform-origin: center;
@@ -878,39 +605,6 @@ export default function CalendarView() {
             transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-40px) scale(0.3);
             opacity: 0;
           }
-        }
-
-        /* 🎨 Beautiful button hover effects */
-        .fc-event button {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        }
-        
-        .fc-event button:hover {
-          transform: scale(1.1) translateY(-1px) !important;
-          filter: brightness(1.1) !important;
-        }
-        
-        /* 🎨 Completed time block special effects */
-        .fc-event.completed-timeblock {
-          position: relative;
-          overflow: visible;
-        }
-        
-        /* 🎨 Subtle pattern overlay for completed blocks */
-        .fc-event.completed-timeblock::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-image: 
-            radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.1) 2px, transparent 2px),
-            radial-gradient(circle at 80% 80%, rgba(52, 211, 153, 0.1) 2px, transparent 2px);
-          background-size: 20px 20px;
-          pointer-events: none;
-          border-radius: inherit;
-          opacity: 0.6;
         }
       `}</style>
     </div>

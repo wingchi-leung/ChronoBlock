@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -75,7 +74,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     if (error) {
       setError(error.message);
     } else {
-      setSuccess('Account created successfully! Please check your email to verify your account.');
+      setSuccess('Account created successfully! You can now sign in.');
     }
     
     setLoading(false);
@@ -83,9 +82,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <DialogContent className="modal-sketch sm:max-w-md bg-background">
+        <DialogHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 border-2 border-current flex items-center justify-center">
+              <div className="w-8 h-8 border border-dashed border-current transform rotate-12"></div>
+            </div>
+          </div>
+          <DialogTitle className="text-2xl font-bold font-mono">
             Welcome to ChronoBlock
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -93,14 +97,24 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin" className="text-sm">Sign In</TabsTrigger>
-            <TabsTrigger value="signup" className="text-sm">Sign Up</TabsTrigger>
+        <Tabs defaultValue="signin" className="w-full mt-6">
+          <TabsList className="grid w-full grid-cols-2 border-2 border-current bg-transparent p-0">
+            <TabsTrigger 
+              value="signin" 
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background border-r border-current"
+            >
+              Sign In
+            </TabsTrigger>
+            <TabsTrigger 
+              value="signup"
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background"
+            >
+              Sign Up
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="signin" className="space-y-4 mt-6">
-            <form onSubmit={handleSignIn} className="space-y-4">
+          <TabsContent value="signin" className="space-y-6 mt-6">
+            <form onSubmit={handleSignIn} className="form-sketch space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
                 <div className="relative">
@@ -143,19 +157,22 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
 
               {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert className="notification-sketch border-red-500 bg-red-50 dark:bg-red-950">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-700 dark:text-red-300">
+                    {error}
+                  </AlertDescription>
                 </Alert>
               )}
 
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="btn-sketch w-full py-3"
                 disabled={loading}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <div className="loader-sketch w-4 h-4 mr-2"></div>
                     Signing in...
                   </>
                 ) : (
@@ -165,8 +182,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </form>
           </TabsContent>
 
-          <TabsContent value="signup" className="space-y-4 mt-6">
-            <form onSubmit={handleSignUp} className="space-y-4">
+          <TabsContent value="signup" className="space-y-6 mt-6">
+            <form onSubmit={handleSignUp} className="form-sketch space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="signup-email" className="text-sm font-medium">Email</Label>
                 <div className="relative">
@@ -226,25 +243,31 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
 
               {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert className="notification-sketch border-red-500 bg-red-50 dark:bg-red-950">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                  <AlertDescription className="text-red-700 dark:text-red-300">
+                    {error}
+                  </AlertDescription>
                 </Alert>
               )}
 
               {success && (
-                <Alert className="border-green-200 bg-green-50 text-green-800">
-                  <AlertDescription>{success}</AlertDescription>
+                <Alert className="notification-sketch border-green-500 bg-green-50 dark:bg-green-950">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-700 dark:text-green-300">
+                    {success}
+                  </AlertDescription>
                 </Alert>
               )}
 
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                className="btn-sketch w-full py-3"
                 disabled={loading}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <div className="loader-sketch w-4 h-4 mr-2"></div>
                     Creating account...
                   </>
                 ) : (
