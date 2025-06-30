@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, LogOut, Settings, Crown } from 'lucide-react';
+import { User, LogOut, Settings, Crown, Sparkles } from 'lucide-react';
 
 export default function UserMenu() {
   const { user, signOut } = useAuth();
@@ -31,42 +31,46 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 p-0">
-          <div className="w-10 h-10 border-2 border-current flex items-center justify-center font-bold hover:bg-muted transition-colors">
+        <Button variant="ghost" className="relative h-12 w-12 p-0 magnetic">
+          <div className="w-12 h-12 border-3 border-current flex items-center justify-center font-bold text-lg hover:bg-muted transition-all duration-300 relative overflow-hidden">
             {userInitials}
+            <div className="absolute inset-0 shimmer opacity-0 hover:opacity-100 transition-opacity"></div>
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="modal-sketch w-56 bg-background" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Account</p>
-            <p className="text-xs leading-none text-muted-foreground font-mono">
+      <DropdownMenuContent className="modal-sketch w-64 bg-background" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal p-4">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-accent" />
+              <p className="text-base font-bold leading-none">Account</p>
+            </div>
+            <p className="text-sm leading-none text-muted-foreground font-mono">
               {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-current opacity-20" />
-        <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+        <DropdownMenuSeparator className="bg-current opacity-20 h-0.5" />
+        <DropdownMenuItem className="cursor-pointer hover:bg-muted p-4 magnetic">
+          <User className="mr-3 h-5 w-5" />
+          <span className="font-medium">Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+        <DropdownMenuItem className="cursor-pointer hover:bg-muted p-4 magnetic">
+          <Settings className="mr-3 h-5 w-5" />
+          <span className="font-medium">Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-          <Crown className="mr-2 h-4 w-4" />
-          <span>Upgrade to Pro</span>
+        <DropdownMenuItem className="cursor-pointer hover:bg-muted p-4 magnetic">
+          <Crown className="mr-3 h-5 w-5 text-accent" />
+          <span className="font-medium">Upgrade to Pro</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-current opacity-20" />
+        <DropdownMenuSeparator className="bg-current opacity-20 h-0.5" />
         <DropdownMenuItem 
-          className="cursor-pointer text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+          className="cursor-pointer text-red-600 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 p-4 magnetic"
           onClick={handleSignOut}
           disabled={loading}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>{loading ? 'Signing out...' : 'Sign out'}</span>
+          <LogOut className="mr-3 h-5 w-5" />
+          <span className="font-medium">{loading ? 'Signing out...' : 'Sign out'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
